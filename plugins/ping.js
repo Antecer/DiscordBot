@@ -1,4 +1,4 @@
-const Discord = module.require("discord.js");
+const Discord = require("discord.js");
 module.exports.run = async (bot, message, args) => {
     let ping = Math.round(bot.ping);
     let color = "#FFFFFF";

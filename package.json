@@ -11,5 +11,14 @@
     "request": "2.87.0"
   },
   "author": "Antecer",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Antecer/DiscordBot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Antecer/DiscordBot/issues"
+  },
+  "homepage": "https://github.com/Antecer/DiscordBot#readme"
 }

@@ -1,4 +1,3 @@
-const Discord = module.require("discord.js");
 module.exports.run = async (bot, message, args) => {
     let msg = await message.channel.send("Query running, please wait..");
 
@@ -13,5 +12,6 @@ module.exports.run = async (bot, message, args) => {
 }
 
 module.exports.help = {
-    name: "image"
+    name: "image",
+    alias: "test"
 }

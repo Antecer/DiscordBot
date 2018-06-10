@@ -21,13 +21,16 @@ fs.readdir("./plugins/", (err, files) => {
     jsfiles.forEach((f, i) => {
         let props = require(`./plugins/${f}`);
         console.log(`${i + 1}: ${f} loaded!`);
-        bot.commands.set(props.help.name, props);
+        let command = props.help.name;
+        if(command) bot.commands.set(command, props);
+        let alias = props.help.alias;
+        if(alias) bot.commands.set(alias, props);
     });
 });
 
 bot.on("ready", async ()=>{
-    console.log(`${bot.user.username} is ready!`);
-    //console.log(bot.commands);    //禁止打印命令列表到后台
+    console.log(`${bot.user.username} is ready!`);  // 打印机器人就绪信息
+    console.log(bot.commands);                      // 打印命令列表到日志
     try {
         let link = await bot.generateInvite(["ADMINISTRATOR"]);
         console.log(`ClickToJoinBot: ${link}`);
