@@ -10,4 +10,5 @@
 # 3）/mtk/do.c		过滤do.c文件
 # 4）!/mtk/one.txt	保留/mtk/one.txt文件
 
+/node_modules/
 debugdata.json
