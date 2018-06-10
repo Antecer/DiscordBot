@@ -27,16 +27,16 @@ fs.readdir("./plugins/", (err, files) => {
 
 bot.on("ready", async ()=>{
     console.log(`${bot.user.username} is ready!`);
-    console.log(bot.commands);
+    //console.log(bot.commands);    //禁止打印命令列表到后台
     try {
         let link = await bot.generateInvite(["ADMINISTRATOR"]);
-        console.log(link);
+        console.log(`ClickToJoinBot: ${link}`);
     } catch (e) {
         console.log(e.stack);
     }
 });
 
-bot.on("message", async message =>{
+bot.on("message", async message => {
     if(message.author.bot) return;
     //if(message.channel.type === "dm") return; // 取消注释以禁止私聊命令
 
@@ -50,7 +50,17 @@ bot.on("message", async message =>{
     if(cmd) cmd.run(bot, message, args);
 });
 
-fs.exists("debugdata.json", function(exists) {
+bot.on("guildMemberAdd", async guid => {
+    let user = guid.user;
+    let msgWelcome = new Discord.RichEmbed()
+        .setColor("#FF00FF")
+        .setAuthor(`${user.username}#${user.discriminator}`, user.avatarURL, user.displayAvatarURL)
+        .addField("Welcome!","Please set your nickname to osu! name.")
+        .setDescription("Input _!help_ to get command list.");
+    message.channel.send({embed: msgWelcome});
+});
+
+fs.exists("./debugdata.json", exists => {
     if(exists)
     {
         const debugdata = require(`./debugdata.json`);
