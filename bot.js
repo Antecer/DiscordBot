@@ -52,6 +52,10 @@ bot.on("message", async message => {
     let args = messageArray.slice(1);
 
     if(!command.startsWith(prefix)) return;
+    if(process.env.SWITCH)
+    {
+        if((process.env.SWITCH == "false") && (!command.startsWith("!ping"))) return;
+    }
 
     let cmd = bot.commands.get(command.slice(prefix.length));
     if(cmd) cmd.run(bot, message, args);
@@ -75,6 +79,6 @@ fs.exists("./debugdata.json", exists => {
     }
     else
     {
-        bot.login(process.env.token);
+        bot.login(process.env.TOKEN);
     }
 });

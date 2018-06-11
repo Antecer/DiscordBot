@@ -1,5 +1,8 @@
 const Discord = require("discord.js");
 module.exports.run = async (bot, message, args) => {
+    let route = "Server";
+    if(process.env.ROUTE) route = process.env.ROUTE;
+
     let ping = Math.round(bot.ping);
     let color = "#FFFFFF";
     if(ping < 100) color = "#00FF00";
@@ -9,6 +12,7 @@ module.exports.run = async (bot, message, args) => {
     let info = new Discord.RichEmbed();
     info.setDescription(
         `${message.author.toString()}\r\n` +
+        `**Route From**: _${route}_` +
         `**Bot Latency**: _${ping}ms_\r\n`+
         `**Response**:    _..._`)
         .setColor(color);
@@ -21,6 +25,7 @@ module.exports.run = async (bot, message, args) => {
     else color = "#000000"
     info.setDescription(
         `${message.author.toString()}\r\n` +
+        `**Route From**: _${route}_` +
         `**Bot Latency**: _${ping}ms_\r\n`+
         `**Response**:    _${response}ms_`)
         .setColor(color);
