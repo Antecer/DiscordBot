@@ -7,19 +7,19 @@ const prefix = botSettings.prefix;
 const bot = new Discord.Client({disableEveryone: true});
 bot.commands = new Discord.Collection();
 
-fs.readdir("./plugins/", (err, files) => {
+fs.readdir("./commands/", (err, files) => {
     if(err) console.error(err);
 
     let jsfiles = files.filter(f => f.split(".").pop() === "js");
     if(jsfiles.length <= 0){
-        console.log("No plugins load!");
+        console.log("No command load!");
         return;
     }
 
     console.log(`Loading ${jsfiles.length} commands!`);
 
     jsfiles.forEach((f, i) => {
-        let props = require(`./plugins/${f}`);
+        let props = require(`./commands/${f}`);
         console.log(`${i + 1}: ${f} loaded!`);
         let command = props.help.name;
         if(command) bot.commands.set(command, props);
