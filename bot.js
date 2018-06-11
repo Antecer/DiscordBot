@@ -24,7 +24,11 @@ fs.readdir("./plugins/", (err, files) => {
         let command = props.help.name;
         if(command) bot.commands.set(command, props);
         let alias = props.help.alias;
-        if(alias) bot.commands.set(alias, props);
+        if(alias instanceof Array){
+            alias.forEach(function(x){
+                bot.commands.set(x, props);
+            });
+        } 
     });
 });
 
@@ -53,14 +57,14 @@ bot.on("message", async message => {
     if(cmd) cmd.run(bot, message, args);
 });
 
-bot.on("guildMemberAdd", async guid => {
-    let user = guid.user;
+bot.on("guildMemberAdd", async GuildMember => {
+    let user = GuildMember.user;
     let msgWelcome = new Discord.RichEmbed()
-        .setColor("#FF00FF")
+        .setColor(0xFF00FF)
         .setAuthor(`${user.username}#${user.discriminator}`, user.avatarURL, user.displayAvatarURL)
         .addField("Welcome!","Please set your nickname to osu! name.")
         .setDescription("Input _!help_ to get command list.");
-    message.channel.send({embed: msgWelcome});
+    GuildMember.guild.defaultChannel.send(msgWelcome);
 });
 
 fs.exists("./debugdata.json", exists => {
