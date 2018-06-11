@@ -12,7 +12,7 @@ module.exports.run = async (bot, message, args) => {
     let info = new Discord.RichEmbed();
     info.setDescription(
         `${message.author.toString()}\r\n` +
-        `**Route From**: _${route}_` +
+        `**Route From**: _${route}_\r\n` +
         `**Bot Latency**: _${ping}ms_\r\n`+
         `**Response**:    _..._`)
         .setColor(color);
@@ -25,7 +25,7 @@ module.exports.run = async (bot, message, args) => {
     else color = "#000000"
     info.setDescription(
         `${message.author.toString()}\r\n` +
-        `**Route From**: _${route}_` +
+        `**Route From**: _${route}_\r\n` +
         `**Bot Latency**: _${ping}ms_\r\n`+
         `**Response**:    _${response}ms_`)
         .setColor(color);
