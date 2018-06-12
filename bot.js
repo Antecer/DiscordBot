@@ -6,6 +6,7 @@ const prefix = botSettings.prefix;
 
 const bot = new Discord.Client({disableEveryone: true});
 bot.commands = new Discord.Collection();
+bot.plugins = new Discord.Collection();
 
 fs.readdir("./commands/", (err, files) => {
     if(err) console.error(err);
@@ -30,11 +31,38 @@ fs.readdir("./commands/", (err, files) => {
             });
         } 
     });
+    console.log(bot.commands);                      // 打印命令列表到日志
+});
+
+
+fs.readdir("./plugins/", (err, files) => {
+    if(err) console.error(err);
+
+    let jsfiles = files.filter(f => f.split(".").pop() === "js");
+    if(jsfiles.length <= 0){
+        console.log("No plugin load!");
+        return;
+    }
+
+    console.log(`Loading ${jsfiles.length} plugins!`);
+
+    jsfiles.forEach((f, i) => {
+        let props = require(`./plugins/${f}`);
+        console.log(`${i + 1}: ${f} loaded!`);
+        let plugin = props.help.name;
+        if(plugin) bot.plugins.set(plugin, props);
+        let alias = props.help.alias;
+        if(alias instanceof Array){
+            alias.forEach(function(x){
+                bot.plugins.set(x, props);
+            });
+        } 
+    });
+    console.log(bot.plugins);                       // 打印插件列表到日志
 });
 
 bot.on("ready", async ()=>{
     console.log(`${bot.user.username} is ready!`);  // 打印机器人就绪信息
-    console.log(bot.commands);                      // 打印命令列表到日志
     try {
         let link = await bot.generateInvite(["ADMINISTRATOR"]);
         console.log(`ClickToJoinBot: ${link}`);
@@ -51,14 +79,23 @@ bot.on("message", async message => {
     let command= messageArray[0];
     let args = messageArray.slice(1);
 
-    if(!command.startsWith(prefix)) return;
-    if(process.env.SWITCH)
-    {
-        if((process.env.SWITCH == "false") && (!command.startsWith("!ping"))) return;
-    }
 
-    let cmd = bot.commands.get(command.slice(prefix.length));
-    if(cmd) cmd.run(bot, message, args);
+    if(command.startsWith(prefix)){
+        // 命令
+        if(process.env.SWITCH)
+        {
+            if((process.env.SWITCH == "false") && (!command.startsWith("!ping"))) return;
+        }
+        let cmd = bot.commands.get(command.slice(prefix.length));
+        if(cmd) cmd.run(bot, message, args);
+    }
+    else{
+        // 插件
+        for(let plugin of bot.plugins.values())
+        {
+            plugin.run(bot, message);
+        }
+    }
 });
 
 bot.on("guildMemberAdd", async GuildMember => {

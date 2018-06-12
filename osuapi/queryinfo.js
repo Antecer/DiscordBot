@@ -43,7 +43,8 @@ async function get_user(userid, mode, type){
                 }
                 else
                 {
-                    let StdInfo = JSON.parse(data);let osu_name = StdInfo[0]["username"];
+                    let StdInfo = JSON.parse(data);
+                    let osu_name = StdInfo[0]["username"];
                     let osu_avatar = `http://a.ppy.sh/${StdInfo[0]["user_id"]}?.jpg`;
                     let osu_userpage = `http://osu.ppy.sh/users/${StdInfo[0]["user_id"]}`;
                     let osu_rank = StdInfo[0]["pp_rank"];
