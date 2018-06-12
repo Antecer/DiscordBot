@@ -13,7 +13,7 @@ module.exports.run = async (bot, message) => {
     let options = {
         hostname: 'translate.google.com',
         port: 80,
-        path: `/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=${message.cleanContent}`,
+        path: `/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&ie=UTF-8&oe=UTF-8&q=${message.cleanContent}`,
         method: 'GET'
     }
 
