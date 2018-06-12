@@ -13,7 +13,7 @@ module.exports.run = async (bot, message) => {
     let options = {
         hostname: 'translate.google.com',
         port: 80,
-        path: `/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&ie=UTF-8&oe=UTF-8&q=${message.cleanContent}`,
+        path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=${message.cleanContent}`),
         method: 'GET'
     }
 
@@ -33,32 +33,30 @@ module.exports.run = async (bot, message) => {
                     .setTitle("Google Translate To:zh-CN")
                     .setDescription(chinese);
                 msg.edit(info);
-                setTimeout(() => {
-                    msg.delete();
-                }, 5000);
+                // setTimeout(() => {
+                //     msg.delete();
+                // }, 5000);
             });
             res.on("error", (e) => {
                 info.setDescription(`Translate Failed:\r\n${e.message}`);
                 msg.edit(info);
-                setTimeout(() => {
-                    msg.delete();
-                }, 5000);
-                console.error(e.message);
+                // setTimeout(() => {
+                //     msg.delete();
+                // }, 5000);
             });
         }).on('error', (e) => {
             info.setDescription(`Translate Failed:\r\n${e.message}`);
             msg.edit(info);
-            setTimeout(() => {
-                msg.delete();
-            }, 5000);
-            console.error(e.message);
+            // setTimeout(() => {
+            //     msg.delete();
+            // }, 5000);
         }).end();
     } catch (error) {
         info.setDescription(`Translate Failed:\r\n${error.message}`);
         msg.edit(info);
-        setTimeout(() => {
-            msg.delete();
-        }, 5000);
+        // setTimeout(() => {
+        //     msg.delete();
+        // }, 5000);
     }
     
 };
