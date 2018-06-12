@@ -2,18 +2,36 @@ const Discord = require("discord.js");
 const http = require('http');
 
 module.exports.run = async (bot, message) => {
-    //"http://translate.google.com/translate_a/single?client=gtx&sl=en&tl=zh-CN&dt=t&q=test"
-    let username = message.member ? message.member.nickname : message.author.name;
+    let translateChannels = ["translate-to-chinese", "translate-to-english"];
+
     let info = new Discord.RichEmbed()
-        .setAuthor(username, message.author.avatarURL)
+        .setAuthor(message.author.username, message.author.avatarURL)
         .setTitle("Google Translate To:zh-CN")
         .setDescription("translate...");
-    let msg = await message.channel.send(info);
+    let msg;
+    if(message.member)
+    {
+        info.setAuthor(message.member.nickname, message.author.avatarURL)
+        translateChannels.forEach(cname => {
+            if(!message.guild.channels.find(c => c.name === cname))
+            {
+                message.guild.createChannel(cname, 'text')
+                    .then(console.log(`[info]创建频道: ${cname}`))
+                    .catch(console.error);
+            }
+        });
 
+        msg = await message.guild.channels.find(c => c.name === `translate-to-chinese`).send(info);
+    }
+    else
+    {
+        msg = await message.channel.send(info);
+    }
+    
     let options = {
         hostname: 'translate.google.com',
         port: 80,
-        path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=${message.cleanContent}`),
+        path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=${message.content}`),
         method: 'GET'
     }
 
@@ -35,30 +53,20 @@ module.exports.run = async (bot, message) => {
                 msg.edit(info);
                 // setTimeout(() => {
                 //     msg.delete();
-                // }, 5000);
+                // }, 10000);
             });
             res.on("error", (e) => {
                 info.setDescription(`Translate Failed:\r\n${e.message}`);
                 msg.edit(info);
-                // setTimeout(() => {
-                //     msg.delete();
-                // }, 5000);
             });
         }).on('error', (e) => {
             info.setDescription(`Translate Failed:\r\n${e.message}`);
             msg.edit(info);
-            // setTimeout(() => {
-            //     msg.delete();
-            // }, 5000);
         }).end();
-    } catch (error) {
-        info.setDescription(`Translate Failed:\r\n${error.message}`);
+    } catch (e) {
+        info.setDescription(`Translate Failed:\r\n${e.message}`);
         msg.edit(info);
-        // setTimeout(() => {
-        //     msg.delete();
-        // }, 5000);
     }
-    
 };
 
 module.exports.help = {
