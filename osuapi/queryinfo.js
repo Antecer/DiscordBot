@@ -2,11 +2,9 @@ const Discord = require("discord.js");
 const http = require('http');
 const qs = require('querystring');
 
-const apiKey = "66c7d763525ff6c9f8c4b2a4417c69535e92d8d2";
-
-async function get_user(userid, mode, type){
+async function get_user(apikey, userid, mode, type){
     let get_user_data = {
-        k: `${apiKey}`,
+        k: `${apikey}`,
         u: `${userid}`,
         m: `${mode}`,
         type: `${type}`,

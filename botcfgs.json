@@ -1,0 +1,7 @@
+{
+    "prefix": "!",
+    "route": "Local Server",
+    "switch": "true",
+    "token": "confidential",
+    "apikey": "confidential"
+}

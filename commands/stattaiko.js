@@ -7,23 +7,20 @@ module.exports.run = async (bot, message, args) => {
         .setTitle("Query running, please wait..");
     let msg = await message.channel.send(info);
 
-    let statinfo = '';
+    let apikey = bot.configs.get("apikey");
+    let osuer = args.join(" ");
     let mode = "1";
-    if(/^\d+$/.test(args))
-    {
-        statinfo = await OsuAPI.get_user(args, mode, "id");
+    let type = "string";
+    if(/^\d+$/.test(osuer)){
+        type = "id";
+    }else{
+        osuer = osuer.replace(/\"/g, "");
     }
-    else
-    {
-        statinfo = await OsuAPI.get_user(args.join(" ").replace(/\"/g, ""), mode, "string");
-    }
-
-    if(statinfo.color == 0xFF0000)
-    {
+    
+    let statinfo = await OsuAPI.get_user(apikey, osuer, mode, type);
+    if(statinfo.color == 0xFF0000){
         msg.edit(statinfo);
-    }
-    else
-    {
+    }else{
         message.channel.send(statinfo);
         msg.delete();
     }
