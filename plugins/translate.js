@@ -11,7 +11,6 @@ module.exports.run = async (bot, message) => {
     let msg;
     if(message.member)
     {
-        info.setAuthor(message.member.nickname, message.author.avatarURL)
         translateChannels.forEach(cname => {
             if(!message.guild.channels.find(c => c.name === cname))
             {
@@ -20,7 +19,7 @@ module.exports.run = async (bot, message) => {
                     .catch(console.error);
             }
         });
-
+        if(message.member.nickname) info.setAuthor(message.member.nickname, message.author.avatarURL);
         msg = await message.guild.channels.find(c => c.name === `translate-to-chinese`).send(info);
     }
     else
