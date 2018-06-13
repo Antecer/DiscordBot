@@ -98,14 +98,18 @@ bot.on("message", async message => {
     }
 });
 
-bot.on("guildMemberAdd", async GuildMember => {
-    let user = GuildMember.user;
-    let msgWelcome = new Discord.RichEmbed()
-        .setColor(0xFF00FF)
-        .setAuthor(`${user.username}#${user.discriminator}`, user.avatarURL, user.displayAvatarURL)
-        .addField("Welcome!","Please set your nickname to osu! name.")
-        .setDescription("Input _!help_ to get command list.");
-    GuildMember.guild.defaultChannel.send(msgWelcome);
+bot.on("guildMemberAdd", async member => {
+    const channel = member.guild.channels.find(c => c.name === "amusingkeypad");
+    if(channel)
+    {
+        channel.send(`Welcome to the server, ${member}`);
+    }
+    // let msgWelcome = new Discord.RichEmbed()
+    //     .setColor(0xFF00FF)
+    //     .setAuthor(`${member.user.username}#${member.user.discriminator}`, member.user.avatarURL)
+    //     .addField("Welcome!","Please set your nickname to osu! name.")
+    //     .setDescription("Input _!help_ to get command list.");
+    // GuildMember.guild.defaultChannel.send(msgWelcome);
 });
 
 fs.exists("./debugdata.json", exists => {
