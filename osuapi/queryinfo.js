@@ -27,9 +27,9 @@ async function get_user(userid, mode, type){
         case "3": mode = "osu!mania"; break;
     }
 
-    let data = '';
     return new Promise(function (resolve, reject) {
         let req = http.request(get_user, function(res) {
+            let data = '';
             res.on('data', function(chunk) {
                 data += chunk;
             });

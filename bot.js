@@ -73,7 +73,7 @@ bot.on("ready", async ()=>{
 
 bot.on("message", async message => {
     if(message.author.bot) return;
-    //if(message.channel.type === "dm") return; // 取消注释以禁止私聊命令
+    if(message.channel.type === "dm") return; // 取消注释以禁止私聊命令
 
     let messageArray = message.content.split(" ");
     let command= messageArray[0];

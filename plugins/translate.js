@@ -33,39 +33,36 @@ module.exports.run = async (bot, message) => {
         path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=${message.content}`),
         method: 'GET'
     }
-
-    let data = "";
-    try {
-        await http.request(options, function(res) {
-            res.on('data', function(chunk) {
-                data += chunk;
+    new Promise(function (resolve, reject) {
+        let req = http.request(options, function(res) {
+            let html = "";
+            res.on('data', chunk => {
+                html += chunk;
             });
-            res.on('end', function() {
-                let Tresult = JSON.parse(data);
-                let chinese = "";
-                Tresult[0].forEach(e => {
-                    chinese += e[0];
-                });
-                info.setAuthor(message.member.nickname, message.author.avatarURL)
-                    .setTitle("Google Translate To:zh-CN")
-                    .setDescription(chinese);
-                msg.edit(info);
-                // setTimeout(() => {
-                //     msg.delete();
-                // }, 10000);
+            res.on('end', () => {
+                resolve(html);
             });
-            res.on("error", (e) => {
-                info.setDescription(`Translate Failed:\r\n${e.message}`);
-                msg.edit(info);
+            res.on("error", (error) => {
+                reject(error);
             });
-        }).on('error', (e) => {
-            info.setDescription(`Translate Failed:\r\n${e.message}`);
-            msg.edit(info);
-        }).end();
-    } catch (e) {
-        info.setDescription(`Translate Failed:\r\n${e.message}`);
+        });
+        req.on('error', (error) => {
+            reject(error);
+        });
+        req.end();
+    })
+    .then(html =>{
+        let chinese = "";
+        JSON.parse(html)[0].forEach(t => { chinese += t[0]; });
+        info.setAuthor(message.member.nickname, message.author.avatarURL)
+            .setTitle("Google Translate To:zh-CN")
+            .setDescription(chinese);
         msg.edit(info);
-    }
+    })
+    .catch(error => {
+        info.setDescription(`Translate Failed:\r\n${error.message}`);
+        msg.edit(info);
+    });
 };
 
 module.exports.help = {
