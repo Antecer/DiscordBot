@@ -1,8 +1,6 @@
 const Discord = require("discord.js");
 module.exports.run = async (bot, message, args) => {
-    let route = "Test Server";
-    if(process.env.ROUTE) route = process.env.ROUTE;
-
+    let route = bot.configs.get("route");
     let ping = Math.round(bot.ping);
     let color = "#FFFFFF";
     if(ping < 100) color = "#00FF00";
