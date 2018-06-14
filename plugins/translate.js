@@ -77,6 +77,7 @@ module.exports.run = async (bot, message) => {
         new Promise(function (resolve, reject) {
             let req = http.request(options, (res) => {
                 let html = "", output;
+                message.channel.send(`Test content-encoding:\r\n${res.headers['content-encoding']}`);
                 if(res.headers['content-encoding']=='gzip'){
                     let gzip = Gunzip.createGunzip();
                     res.pipe(gzip);
@@ -85,7 +86,7 @@ module.exports.run = async (bot, message) => {
                     output=res;
                 }
                 output.on('data',(data)=>{
-                    data=data.toString('utf-8');
+                    //data=data.toString('utf-8');
                     html+=data;
                 });
                 output.on('end',()=>{
