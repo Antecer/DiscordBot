@@ -1,6 +1,6 @@
 const Discord = require("discord.js");
 const http = require('http');
-const Gunzip = require('zlib');
+const request = require('request')
 
 module.exports.run = async (bot, message) => {
     let translateChannels = ["translate-to-chinese", "translate-to-english"];
@@ -74,55 +74,33 @@ module.exports.run = async (bot, message) => {
             path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${message.content}`),
             method: 'GET'
         }
-        console.log(options.path);
         new Promise(function (resolve, reject) {
-            let req = http.request(options, (res) => {
-                let html = Buffer.allocUnsafe(0);
-                res.on('data', chunk => {
-                    html = Buffer.concat([html, chunk], html.length + chunk.length);
-                });
-                res.on('end', () => {
-                    resolve(html.toString());
-                });
-                res.on("error", (error) => {
-                    reject(error);
-                });
+            let url = `http://translate.google.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${message.content}`;
+            request(url, function (err, res, body) {
+                if(err) reject(err);
+                message.channel.send("TEST:\r\n" + body);
+                resolve(body);
+                // console.log(body)
+            })
 
-                // let html = "", output;
-                // if(res.headers['content-encoding']=='gzip'){
-                //     let gzip = Gunzip.createGunzip();
-                //     res.pipe(gzip);
-                //     output=gzip;
-                // }else{
-                //     output=res;
-                // }
-                // output.on('data',(data)=>{
-                //     data=data.toString('gbk');
-                //     html+=data;
-                // });
-                // output.on('end',()=>{
-                //     resolve(html);
-                // });
-                // output.on('error',(error) => {
-                //     reject(error);
-                // });
-                // res.on('data', chunk => {
-                //     html += chunk;
-                // });
-                // res.on('end', () => {
-                //     resolve(html);
-                // });
-                // res.on("error", (error) => {
-                //     reject(error);
-                // });
-            });
-            req.on('error', (error) => {
-                reject(error);
-            });
-            req.end();
+            // let req = http.request(options, (res) => {
+            //     let html = Buffer.allocUnsafe(0);
+            //     res.on('data', chunk => {
+            //         html = Buffer.concat([html, chunk], html.length + chunk.length);
+            //     });
+            //     res.on('end', () => {
+            //         resolve(html.toString());
+            //     });
+            //     res.on("error", (error) => {
+            //         reject(error);
+            //     });
+            // });
+            // req.on('error', (error) => {
+            //     reject(error);
+            // });
+            // req.end();
         })
         .then(html =>{
-            message.channel.send(`Test:\r\n${html}`);
             let data = "";
             JSON.parse(html)[0].forEach(t => { data += t[0]; });
             info.setDescription(data);
