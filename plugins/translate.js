@@ -110,7 +110,7 @@ module.exports.run = async (bot, message) => {
             req.end();
         })
         .then(html =>{
-            await message.channel.send(`Test:\r\n${html}`);
+            message.channel.send(`Test:\r\n${html}`);
             let data = "";
             JSON.parse(html)[0].forEach(t => { data += t[0]; });
             info.setDescription(data);
