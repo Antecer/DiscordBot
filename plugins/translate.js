@@ -74,27 +74,38 @@ module.exports.run = async (bot, message) => {
             path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${message.content}`),
             method: 'GET'
         }
+        console.log(options.path);
         new Promise(function (resolve, reject) {
             let req = http.request(options, (res) => {
-                let html = "", output;
-                message.channel.send(`Test content-encoding:\r\n${res.headers['content-encoding']}`);
-                if(res.headers['content-encoding']=='gzip'){
-                    let gzip = Gunzip.createGunzip();
-                    res.pipe(gzip);
-                    output=gzip;
-                }else{
-                    output=res;
-                }
-                output.on('data',(data)=>{
-                    data=data.toString('gb2312');
-                    html+=data;
+                let html = Buffer.allocUnsafe(0);
+                res.on('data', chunk => {
+                    html = Buffer.concat([html, chunk], html.length + chunk.length);
                 });
-                output.on('end',()=>{
-                    resolve(html);
+                res.on('end', () => {
+                    resolve(html.toString());
                 });
-                output.on('error',(error) => {
+                res.on("error", (error) => {
                     reject(error);
                 });
+
+                // let html = "", output;
+                // if(res.headers['content-encoding']=='gzip'){
+                //     let gzip = Gunzip.createGunzip();
+                //     res.pipe(gzip);
+                //     output=gzip;
+                // }else{
+                //     output=res;
+                // }
+                // output.on('data',(data)=>{
+                //     data=data.toString('gbk');
+                //     html+=data;
+                // });
+                // output.on('end',()=>{
+                //     resolve(html);
+                // });
+                // output.on('error',(error) => {
+                //     reject(error);
+                // });
                 // res.on('data', chunk => {
                 //     html += chunk;
                 // });
