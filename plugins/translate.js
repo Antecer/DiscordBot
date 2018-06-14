@@ -74,17 +74,34 @@ module.exports.run = async (bot, message) => {
             method: 'GET'
         }
         new Promise(function (resolve, reject) {
-            let req = http.request(options, function(res) {
-                let html = "";
-                res.on('data', chunk => {
-                    html += chunk;
+            let req = http.request(options, (res) => {
+                let html = "", output;
+                if(res.headers['content-encoding']=='gzip'){
+                    let gzip = require('zlib').createGunzip();
+                    res.pipe(gzip);
+                    output=gzip;
+                }else{
+                    output=res;
+                }
+                output.on('data',(data)=>{
+                    data=data.toString('utf-8');
+                    html+=data;
                 });
-                res.on('end', () => {
+                output.on('end',()=>{
                     resolve(html);
                 });
-                res.on("error", (error) => {
+                output.on('error',(error) => {
                     reject(error);
                 });
+                // res.on('data', chunk => {
+                //     html += chunk;
+                // });
+                // res.on('end', () => {
+                //     resolve(html);
+                // });
+                // res.on("error", (error) => {
+                //     reject(error);
+                // });
             });
             req.on('error', (error) => {
                 reject(error);
