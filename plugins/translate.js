@@ -1,6 +1,7 @@
 const Discord = require("discord.js");
 const http = require('http');
-const request = require('request')
+const iconv = require('iconv-lite');
+const BufferHelper = require('bufferhelper');
 
 module.exports.run = async (bot, message) => {
     let translateChannels = ["translate-to-chinese", "translate-to-english"];
@@ -75,30 +76,24 @@ module.exports.run = async (bot, message) => {
             method: 'GET'
         }
         new Promise(function (resolve, reject) {
-            let url = `http://translate.google.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${message.content}`;
-            request(encodeURI(url), function (err, res, body) {
-                if(err) reject(err);
-                message.channel.send("TEST:\r\n" + body);
-                resolve(body);
-                // console.log(body)
-            })
-
-            // let req = http.request(options, (res) => {
-            //     let html = Buffer.allocUnsafe(0);
-            //     res.on('data', chunk => {
-            //         html = Buffer.concat([html, chunk], html.length + chunk.length);
-            //     });
-            //     res.on('end', () => {
-            //         resolve(html.toString());
-            //     });
-            //     res.on("error", (error) => {
-            //         reject(error);
-            //     });
-            // });
-            // req.on('error', (error) => {
-            //     reject(error);
-            // });
-            // req.end();
+            let req = http.request(options, (res) => {
+                let buffer = new BufferHelper();
+                res.on('data', chunk => {
+                    buffer.concat(chunk);
+                });
+                res.on('end', () => {
+                    let html = buffer.toBuffer();
+                    resolve(iconv.decode(html,'GBK'));
+                    //resolve(html.toString());
+                });
+                res.on("error", (error) => {
+                    reject(error);
+                });
+            });
+            req.on('error', (error) => {
+                reject(error);
+            });
+            req.end();
         })
         .then(html =>{
             let data = "";
