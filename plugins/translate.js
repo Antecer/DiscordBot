@@ -51,7 +51,10 @@ module.exports.run = async (bot, message) => {
         .then(html =>{
             let data = "";
             JSON.parse(html)[0].forEach(t => { data += t[0]; });
-            info.setDescription(`*${message.content}*\r\n\r\n${data}`);
+            info.setDescription(
+                `*${message.content}*`+
+                `\r\n~~~~~~~~~~\r\n`+
+                `${data}`);
             msg.edit(info);
         })
         .catch(error => {
@@ -94,7 +97,10 @@ module.exports.run = async (bot, message) => {
         .then(html =>{
             let data = "";
             JSON.parse(html)[0].forEach(t => { data += t[0]; });
-            info.setDescription(`*${message.content}*\r\n\r\n${data}`);
+            info.setDescription(
+                `*${message.content}*`+
+                `\r\n~~~~~~~~~~\r\n`+
+                `${data}`);
             msg.edit(info);
         })
         .catch(error => {
