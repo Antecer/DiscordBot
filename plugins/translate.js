@@ -24,7 +24,7 @@ module.exports.run = async (bot, message) => {
         let options = {
             hostname: 'translate.google.com',
             port: 80,
-            path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=${message.content}`),
+            path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=zh-CN&ie=UTF-8&oe=UTF-8&dt=t&q=${message.content}`),
             method: 'GET',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
