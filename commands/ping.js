@@ -2,13 +2,12 @@ const Discord = require("discord.js");
 module.exports.run = async (bot, message, args) => {
     let route = bot.configs.get("route");
     let ping = Math.round(bot.ping);
-    let color = "#FFFFFF";
-    if(ping < 100) color = "#00FF00";
-    else if(100 <= ping && ping <500) color = "#FF8000";
-    else if(500 <= ping && ping <2000) color = "#FF0000";
-    else color = "#000000"
-    let info = new Discord.RichEmbed();
-    info.setDescription(
+    let color = 0x000000;
+    if(ping < 2000) color = 0xFF0000;
+    if(ping < 500) color = 0xFF8000;
+    if(ping < 100) color = 0x00FF00;
+    let info = new Discord.RichEmbed()
+        .setDescription(
         `${message.member}\r\n` +
         `**Route From**: _${route}_\r\n` +
         `**Bot Latency**: _${ping}ms_\r\n`+
@@ -17,10 +16,9 @@ module.exports.run = async (bot, message, args) => {
     let msg = await message.channel.send(info);
 
     let response = msg.createdTimestamp - message.createdTimestamp;
-    if(response < 100) color = "#00FF00";
-    else if(100 <= response && response <500) color = "#FF8000";
-    else if(500 <= response && response <2000) color = "#FF0000";
-    else color = "#000000"
+    if(response > 100) color = 0xFF8000;
+    if(response > 500) color = 0xFF0000;
+    if(response > 2000) color = 0x000000;
     info.setDescription(
         `${message.member}\r\n` +
         `**Route From**: _${route}_\r\n` +
