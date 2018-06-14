@@ -1,7 +1,5 @@
 const Discord = require("discord.js");
 const http = require('http');
-const iconv = require('iconv-lite');
-const BufferHelper = require('bufferhelper');
 
 module.exports.run = async (bot, message) => {
     let translateChannels = ["translate-to-chinese", "translate-to-english"];
@@ -72,19 +70,17 @@ module.exports.run = async (bot, message) => {
         let options = {
             hostname: 'translate.google.com',
             port: 80,
-            path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${message.content}`),
+            path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=en&ie=UTF-8&oe=UTF-8&dt=t&q=${message.content}`),
             method: 'GET'
         }
         new Promise(function (resolve, reject) {
             let req = http.request(options, (res) => {
-                let buffer = new BufferHelper();
+                let html = "";
                 res.on('data', chunk => {
-                    buffer.concat(chunk);
+                    html += chunk;
                 });
                 res.on('end', () => {
-                    let html = buffer.toBuffer();
-                    resolve(iconv.decode(html,'GBK'));
-                    //resolve(html.toString());
+                    resolve(html);
                 });
                 res.on("error", (error) => {
                     reject(error);
