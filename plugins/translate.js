@@ -25,7 +25,10 @@ module.exports.run = async (bot, message) => {
             hostname: 'translate.google.com',
             port: 80,
             path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=${message.content}`),
-            method: 'GET'
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            }
         }
         new Promise(function (resolve, reject) {
             let req = http.request(options, function(res) {
@@ -34,9 +37,7 @@ module.exports.run = async (bot, message) => {
                     html += chunk;
                 });
                 res.on('end', () => {
-                    const decoder = new TextDecoder(res.headers['content-type'].match(/(?:charset=)(\w+)/)[1] || 'utf8');
-                    resolve(decoder.decode(html));
-                    // resolve(html);
+                    resolve(html);
                 });
                 res.on("error", (error) => {
                     reject(error);
@@ -70,7 +71,10 @@ module.exports.run = async (bot, message) => {
             hostname: 'translate.google.com',
             port: 80,
             path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${message.content}`),
-            method: 'GET'
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            }
         }
         new Promise(function (resolve, reject) {
             let req = http.request(options, function(res) {
@@ -79,9 +83,7 @@ module.exports.run = async (bot, message) => {
                     html += chunk;
                 });
                 res.on('end', () => {
-                    const decoder = new TextDecoder(res.headers['content-type'].match(/(?:charset=)(\w+)/)[1] || 'utf8');
-                    resolve(decoder.decode(html));
-                    // resolve(html);
+                    resolve(html);
                 });
                 res.on("error", (error) => {
                     reject(error);
