@@ -86,7 +86,7 @@ module.exports.run = async (bot, message) => {
                     output=res;
                 }
                 output.on('data',(data)=>{
-                    //data=data.toString('utf-8');
+                    data=data.toString('gb2312');
                     html+=data;
                 });
                 output.on('end',()=>{
