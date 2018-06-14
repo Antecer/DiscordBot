@@ -34,7 +34,9 @@ module.exports.run = async (bot, message) => {
                     html += chunk;
                 });
                 res.on('end', () => {
-                    resolve(html);
+                    const decoder = new TextDecoder(res.headers['content-type'].match(/(?:charset=)(\w+)/)[1] || 'utf8');
+                    resolve(decoder.decode(html));
+                    // resolve(html);
                 });
                 res.on("error", (error) => {
                     reject(error);
@@ -77,7 +79,9 @@ module.exports.run = async (bot, message) => {
                     html += chunk;
                 });
                 res.on('end', () => {
-                    resolve(html);
+                    const decoder = new TextDecoder(res.headers['content-type'].match(/(?:charset=)(\w+)/)[1] || 'utf8');
+                    resolve(decoder.decode(html));
+                    // resolve(html);
                 });
                 res.on("error", (error) => {
                     reject(error);
