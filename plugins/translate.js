@@ -1,5 +1,6 @@
 const Discord = require("discord.js");
 const http = require('http');
+const Gunzip = require('zlib');
 
 module.exports.run = async (bot, message) => {
     let translateChannels = ["translate-to-chinese", "translate-to-english"];
@@ -77,7 +78,7 @@ module.exports.run = async (bot, message) => {
             let req = http.request(options, (res) => {
                 let html = "", output;
                 if(res.headers['content-encoding']=='gzip'){
-                    let gzip = require('zlib').createGunzip();
+                    let gzip = Gunzip.createGunzip();
                     res.pipe(gzip);
                     output=gzip;
                 }else{
