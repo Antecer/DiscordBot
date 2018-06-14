@@ -75,19 +75,12 @@ module.exports.run = async (bot, message) => {
         }
         new Promise(function (resolve, reject) {
             let req = http.request(options, function(res) {
-                //let html = "";
-                let chunks = [];
+                let html = "";
                 res.on('data', chunk => {
-                    //html += chunk;
-                    chunks.push(chunk);
+                    html += chunk;
                 });
                 res.on('end', () => {
-                    let buff = Buffer.concat(chunks);
-                    let charset = res.headers['content-type'].match(/(?:charset=)(\w+)/)[1] || 'utf8';
-                    const StringDecoder = require('string_decoder').StringDecoder;
-                    const decoder = new StringDecoder(charset);
-                    resolve(decoder.end(buff));
-                    //resolve(html);
+                    resolve(html);
                 });
                 res.on("error", (error) => {
                     reject(error);
@@ -99,6 +92,7 @@ module.exports.run = async (bot, message) => {
             req.end();
         })
         .then(html =>{
+            await message.channel.send(`Test:\r\n${html}`);
             let data = "";
             JSON.parse(html)[0].forEach(t => { data += t[0]; });
             info.setDescription(data);
