@@ -76,7 +76,7 @@ module.exports.run = async (bot, message) => {
         }
         new Promise(function (resolve, reject) {
             let url = `http://translate.google.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${message.content}`;
-            request(url, function (err, res, body) {
+            request(encodeURI(url), function (err, res, body) {
                 if(err) reject(err);
                 message.channel.send("TEST:\r\n" + body);
                 resolve(body);
