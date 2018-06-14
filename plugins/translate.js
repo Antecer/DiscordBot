@@ -71,19 +71,23 @@ module.exports.run = async (bot, message) => {
             hostname: 'translate.google.com',
             port: 80,
             path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${message.content}`),
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-            }
+            method: 'GET'
         }
         new Promise(function (resolve, reject) {
             let req = http.request(options, function(res) {
-                let html = "";
+                //let html = "";
+                let chunks = [];
                 res.on('data', chunk => {
-                    html += chunk;
+                    //html += chunk;
+                    chunks.push(chunk);
                 });
                 res.on('end', () => {
-                    resolve(html);
+                    let buff = Buffer.concat(chunks);
+                    let charset = res.headers['content-type'].match(/(?:charset=)(\w+)/)[1] || 'utf8';
+                    const StringDecoder = require('string_decoder').StringDecoder;
+                    const decoder = new StringDecoder(charset);
+                    resolve(decoder.end(buff));
+                    //resolve(html);
                 });
                 res.on("error", (error) => {
                     reject(error);
