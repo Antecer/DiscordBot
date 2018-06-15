@@ -1,6 +1,6 @@
 {
     "prefix": "!",
-    "route": "Local Server",
+    "route": "Bot Server",
     "switch": "true",
     "token": "confidential",
     "apikey": "confidential"

@@ -1,113 +1,89 @@
 const Discord = require("discord.js");
 const http = require('http');
+const langs = require(`./translate/languagesupport.json`);
+const tprefix = "tl-";
 
 module.exports.run = async (bot, message) => {
-    let translateChannels = ["translate-to-chinese", "translate-to-english"];
-    if(message.member){ // 创建翻译频道
-        translateChannels.forEach(cname => {
-            if(!message.guild.channels.find(c => c.name === cname)){
-                message.guild.createChannel(cname, 'text')
-                    .then(console.log(`[info]创建频道: ${cname}`))
-                    .catch(console.error);
-            }
-        });
-    }
-    let authorname = message.member.nickname == "null" ? message.author.username : message.member.nickname;
-
-    if(message.channel.name != "translate-to-chinese")
-    {
-        let info = new Discord.RichEmbed()
-            .setAuthor(authorname, message.author.avatarURL)
-            .setTitle("Google Translate To:zh-CN")
-            .setDescription("translate...");
-        let msg = await message.guild.channels.find(c => c.name === `translate-to-chinese`).send(info);
-        let options = {
-            hostname: 'translate.google.com',
-            port: 80,
-            path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=zh-CN&ie=UTF-8&oe=UTF-8&dt=t&q=${message.content}`),
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+    // 获取消息发送人的用户名或昵称
+    let authorname = message.member.nickname ? message.member.nickname : message.author.username;
+    // 缓存频道集合
+    let allc = message.guild.channels;
+    // 遍历所有频道
+    for(let msgc of allc.values()){
+        // 排除不符合要求的频道
+        if(!msgc.name.startsWith(tprefix)) continue;
+        // 排除当前频道
+        if(msgc.name === message.channel.name) continue;
+        // 查找频道对应的语言
+        let msgclang = msgc.name.slice(tprefix.length);
+        for(let lang in langs)
+        {
+            if(lang.toLowerCase() === msgclang)
+            {
+                let tlang = langs[lang];
+                let info = new Discord.RichEmbed()
+                    .setAuthor(authorname, message.author.avatarURL)
+                    .setTitle(`Google Translate To:${tlang}`)
+                    .setDescription(message.content)
+                    .setFooter(`translate...`);
+                msgc.send(info)
+                    .then(msg => {
+                        let options = {
+                            hostname: 'translate.google.com',
+                            port: 80,
+                            path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=${tlang}&ie=UTF-8&oe=UTF-8&dt=t&q=${message.content}`),
+                            method: 'GET'
+                        }
+                        new Promise(function (resolve, reject) {
+                            let req = http.request(options, function(res) {
+                                let html = "";
+                                res.on('data', chunk => {
+                                    html += chunk;
+                                });
+                                res.on('end', () => {
+                                    resolve(html);
+                                });
+                                res.on("error", (error) => {
+                                    reject(error);
+                                });
+                            });
+                            req.on('error', (error) => {
+                                reject(error);
+                            });
+                            req.end();
+                        })
+                        .then(html =>{
+                            let data = "";
+                            JSON.parse(html)[0].forEach(t => { data += t[0]; });
+                            info.setDescription(
+                                `*${message.content}*`+
+                                `\n==========\n`+
+                                `${data}`)
+                                .setFooter('');
+                            msg.edit(info);
+                        })
+                        .catch(error => {
+                            info.setFooter(`Translate Failed:${error.message}`);
+                            msg.edit(info);
+                        });
+                    })
+                    .catch(err => {
+                        console.error(`[TranslateError]${err.message}`);
+                    });
             }
         }
-        new Promise(function (resolve, reject) {
-            let req = http.request(options, function(res) {
-                let html = "";
-                res.on('data', chunk => {
-                    html += chunk;
-                });
-                res.on('end', () => {
-                    resolve(html);
-                });
-                res.on("error", (error) => {
-                    reject(error);
-                });
-            });
-            req.on('error', (error) => {
-                reject(error);
-            });
-            req.end();
-        })
-        .then(html =>{
-            let data = "";
-            JSON.parse(html)[0].forEach(t => { data += t[0]; });
-            info.setDescription(
-                `*${message.content}*`+
-                `\r\n~~~~~~~~~~\r\n`+
-                `${data}`);
-            msg.edit(info);
-        })
-        .catch(error => {
-            info.setDescription(`Translate Failed:\r\n${error.message}`);
-            msg.edit(info);
-        });
-    }
+    };
 
-    if(message.channel.name != "translate-to-english")
-    {
-        let info = new Discord.RichEmbed()
-            .setAuthor(authorname, message.author.avatarURL)
-            .setTitle("Google Translate To:en")
-            .setDescription("translate...");
-        let msg = await message.guild.channels.find(c => c.name === `translate-to-english`).send(info);
-        let options = {
-            hostname: 'translate.google.com',
-            port: 80,
-            path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=en&ie=UTF-8&oe=UTF-8&dt=t&q=${message.content}`),
-            method: 'GET'
-        }
-        new Promise(function (resolve, reject) {
-            let req = http.request(options, (res) => {
-                let html = "";
-                res.on('data', chunk => {
-                    html += chunk;
-                });
-                res.on('end', () => {
-                    resolve(html);
-                });
-                res.on("error", (error) => {
-                    reject(error);
-                });
-            });
-            req.on('error', (error) => {
-                reject(error);
-            });
-            req.end();
-        })
-        .then(html =>{
-            let data = "";
-            JSON.parse(html)[0].forEach(t => { data += t[0]; });
-            info.setDescription(
-                `*${message.content}*`+
-                `\r\n~~~~~~~~~~\r\n`+
-                `${data}`);
-            msg.edit(info);
-        })
-        .catch(error => {
-            info.setDescription(`Translate Failed:\r\n${error.message}`);
-            msg.edit(info);
-        });
-    }
+    // let translateChannels = ["tl-chinese", "tl-english"];
+    // if(message.member){ // 创建翻译频道
+    //     translateChannels.forEach(cname => {
+    //         if(!message.guild.channels.find(c => c.name === cname)){
+    //             message.guild.createChannel(cname, 'text')
+    //                 .then(console.log(`[info]创建频道: ${cname}`))
+    //                 .catch(console.error);
+    //         }
+    //     });
+    // }
 };
 
 module.exports.help = {

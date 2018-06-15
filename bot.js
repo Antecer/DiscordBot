@@ -111,8 +111,16 @@ Promise.all([loadconfigs, loadcommands, loadplugins])
         const channel = member.guild.channels.find(c => c.name === "amusingkeypad");
         if(channel)
         {
-            channel.send(`Welcome to the server, ${member}`);
+            channel.send(
+                `Welcome to the server, ${member}`
+                +`\nPlease set your _nickname_ to osu! name.`
+                +`\nInput _!help_ to get my command list.`
+            );
         }
+    });
+    // 错误输出
+    bot.on('error',error =>{
+        console.error(`BotError: ${error.message}`);
     });
     // 登陆机器人
     bot.login(bot.configs.get("token"));
