@@ -1,24 +1,27 @@
 const Discord = require("discord.js");
-module.exports.run = async (bot, message, args) => {
-    let cmdlist = [
-        `!help(alias='?')   // Print this help list`,
-        `!ping  // Print the robot's network status`,
-        `!serverinfo    // Print server info`,
-        `!userinfo [@user]  // Print user's info`,
-        `!stat__s__tandard <"name" | id>  // Statistics osu!standard data`,
-        `!stat__t__aiko <"name" | id>  // Statistics osu!taiko data`,
-        `!stat__c__atch <"name" | id>  // Statistics osu!catch data`,
-        `!stat__m__ania <"name" | id>  // Statistics osu!mania data`
-    ];
+const cmdlist =
+`\`\`\`MarkDown
+#OsuInfoBot Commands
+[00]: !help <Print bot commands>
+[01]: !ping <Print bot's network status>
+[02]: !userinfo[ @user] <Print user's info>
+[03]: !serverinfo <Print server info>
+[04]: !s[ "name"|id] <Print osu!std rank>
+[05]: !t[ "name"|id] <Print osu!taiko rank>
+[06]: !c[ "name"|id] <Print osu!catch rank>
+[07]: !m[ "name"|id] <Print osu!mania rank>
+[08]: !r[ "name"|id] <osu!std recent last>
+[09]: !tr[ "name"|id] <osu!std recent top>
+[10]: !pr[ "name"|id] <osu!std recent perfect>
+\`\`\``;
 
-    let cmdhelp = new Discord.RichEmbed()
-        .setColor("#FFFFFF")
-        .setAuthor(`${bot.user.username}#${bot.user.discriminator}`, bot.user.avatarURL, bot.user.displayAvatarURL)
-        .setTitle(`Command List:`)
-        .setDescription(cmdlist.join("\n"))
-        ;
-    
-    message.channel.send({embed: cmdhelp});
+module.exports.run = async (bot, message, args) => {
+    message.channel.send(cmdlist)
+        .then(msg => {
+            setTimeout(() => {
+                msg.delete();
+            }, 30000);
+        });
 }
 
 module.exports.help = {

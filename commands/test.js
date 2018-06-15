@@ -9,21 +9,29 @@ module.exports.run = async (bot, message, args) => {
     let info = new Discord.RichEmbed()
         .setAuthor(authorname, message.author.avatarURL)
         .setTitle(`This is a test!`)
-        .setDescription(`This is the test content\n====================`)
-        .setFooter(`This is the test result`);
+        .setDescription('```MarkDown\n#test markdown\n```');
     message.channel.send(info)
         .then(msg => {
-            setTimeout(() => {
-                info.setFooter('');
-                msg.edit(info);
-            }, 6000);
+            // setTimeout(() => {
+            //     info.setFooter('');
+            //     msg.edit(info);
+            // }, 6000);
 
 
 
-            setTimeout(() => {
-                msg.delete();
-                message.delete();
-            }, 10000);
+            let time = 10;
+            let timer = setInterval(() => {
+                if(--time > 0)
+                {
+                    info.setFooter(time);
+                    msg.edit(info);
+                }else{
+                    msg.delete();
+                    //message.delete(); //慎用，若消息作者在Bot前面删除本条消息将导致Bot崩溃
+                    clearInterval(timer);
+                }
+
+            }, 1000);
         });
 }
 

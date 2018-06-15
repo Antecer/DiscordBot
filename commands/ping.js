@@ -25,7 +25,12 @@ module.exports.run = async (bot, message, args) => {
         `**Bot Latency**: _${ping}ms_\r\n`+
         `**Response**:    _${response}ms_`)
         .setColor(color);
-    msg.edit(info);
+    msg.edit(info)
+        .then(msg => {
+            setTimeout(() => {
+                msg.delete();
+            }, 5000);
+        });
 }
 
 module.exports.help = {

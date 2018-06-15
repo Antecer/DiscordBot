@@ -95,7 +95,7 @@ Promise.all([loadconfigs, loadcommands, loadplugins])
         let command= messageArray[0];
         let args = messageArray.slice(1);
 
-        // 机器人状态响应总开关(特殊允许!ping响应，以测试机器人是否开始工作)
+        // 机器人命令响应总开关(特殊允许!ping响应，以测试机器人是否开始工作)
         if((botcfgs.switch == "false") && (!command.startsWith("!ping"))) return;
         if(command.startsWith(prefix)){
             // 执行匹配的命令
