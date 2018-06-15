@@ -57,7 +57,7 @@ module.exports.run = async (bot, message) => {
                             JSON.parse(html)[0].forEach(t => { data += t[0]; });
                             info.setDescription(
                                 `*${message.content}*`+
-                                `\n==========\n`+
+                                `\n====================\n`+
                                 `${data}`)
                                 .setFooter('');
                             msg.edit(info);
