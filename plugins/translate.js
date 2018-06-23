@@ -59,7 +59,7 @@ module.exports.run = async (bot, message) => {
                                 `*${message.content}*`+
                                 `\n====================\n`+
                                 `${data}`)
-                                .setFooter(`From: ${message.channel.name}`);
+                                .setFooter(`From: #${message.channel.name}`);
                             msg.edit(info);
                         })
                         .catch(error => {
