@@ -3,5 +3,8 @@
     "route": "Bot Server",
     "switch": "true",
     "token": "confidential",
-    "apikey": "confidential"
+    "apikey": "confidential",
+    "plugins": {
+        "GoogleTranslate": "true"
+    }
 }

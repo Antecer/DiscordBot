@@ -1,5 +1,5 @@
 const Discord = require("discord.js");
-const OsuAPI = require("../osuapi/queryinfo.js");
+const OsuAPI = require(process.cwd() + '/osuapi/queryinfo.js');
 
 module.exports.run = async (bot, message, args) => {
     let info = new Discord.RichEmbed()

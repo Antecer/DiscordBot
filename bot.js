@@ -13,8 +13,8 @@ var loadconfigs = new Promise((resolve, reject)=>{  // 载入配置
         for(let key in botcfgs){
             if(process.env[key]) botcfgs[key] = process.env[key];
             bot.configs.set(key, botcfgs[key]);
-            console.log(`CFG: ${key} = ${bot.configs.get(key)}`);
         }
+        console.log(`CONFIGS: ${JSON.stringify(botcfgs)}`);
         resolve(true);
     });
 });
@@ -27,10 +27,11 @@ var loadcommands = new Promise((resolve, reject)=>{ // 载入命令
             console.log("No command load!");
             resolve(false);
         }else{
-            console.log(`Loading ${jsfiles.length} commands!`);
+            let loadlist = {};
             jsfiles.forEach((f, i) => {
+                loadlist[`${i + 1}`] = `${f}`;
+
                 let props = require(`./commands/${f}`);
-                console.log(`${i + 1}: ${f} loaded!`);
                 let command = props.help.name;
                 if(command) bot.commands.set(command, props);
                 let alias = props.help.alias;
@@ -40,7 +41,8 @@ var loadcommands = new Promise((resolve, reject)=>{ // 载入命令
                     });
                 } 
             });
-            console.log(bot.commands);                      // 打印命令列表到日志
+            console.log(`_CommandFiles:` + JSON.stringify(loadlist));                       // 输出已加载文件列表
+            console.log(`_Commands:` + JSON.stringify(Array.from(bot.commands.keys())));    // 打印命令列表到日志
             resolve(true);
         }
     });
@@ -54,10 +56,11 @@ var loadplugins = new Promise((resolve, reject)=>{  // 载入插件
             console.log("No plugin load!");
             resolve(false);
         }else{
-            console.log(`Loading ${jsfiles.length} plugins!`);
+            let loadlist = {};
             jsfiles.forEach((f, i) => {
+                loadlist[`${i + 1}`] = `${f}`;
+
                 let props = require(`./plugins/${f}`);
-                console.log(`${i + 1}: ${f} loaded!`);
                 let plugin = props.help.name;
                 if(plugin) bot.plugins.set(plugin, props);
                 let alias = props.help.alias;
@@ -67,7 +70,8 @@ var loadplugins = new Promise((resolve, reject)=>{  // 载入插件
                     });
                 } 
             });
-            console.log(bot.plugins);                       // 打印插件列表到日志
+            console.log(`_PluginFiles:` + JSON.stringify(loadlist));                    // 输出已加载文件列表
+            console.log(`_Plugins:` + JSON.stringify(Array.from(bot.plugins.keys())));  // 打印插件列表到日志
             resolve(true);
         }
     });
@@ -82,6 +86,11 @@ Promise.all([loadconfigs, loadcommands, loadplugins])
             console.log(`ClickToJoinBot: ${link}`);
         } catch (e) {
             console.log(e.stack);
+        }
+        
+        if(bot.configs.get('route') == 'Test Server'){  // 测试代码块,仅允许测试服运行
+            let test = require(`./test.js`);
+            console.debug(`[${test.help.name}] is running...`);
         }
     });
     // 定义命令前缀
@@ -103,7 +112,10 @@ Promise.all([loadconfigs, loadcommands, loadplugins])
             if(cmd) cmd.run(bot, message, args);
         }else{
             // 遍历并运行所有插件
-            for(let plugin of bot.plugins.values()) plugin.run(bot, message);
+            for(let plugin of Array.from(bot.plugins.keys())){
+                if(bot.configs.get("plugins")[plugin] == "false") continue;
+                bot.plugins.get(plugin).run(bot, message);
+            }
         }
     });
     // 新成员加入服务器事件
@@ -120,7 +132,7 @@ Promise.all([loadconfigs, loadcommands, loadplugins])
     });
     // 错误输出
     bot.on('error',error =>{
-        console.error(`BotError: ${error.message}`);
+        console.error(`[BotError] ${error}`);
     });
     // 登陆机器人
     bot.login(bot.configs.get("token"));

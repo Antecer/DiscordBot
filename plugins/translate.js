@@ -59,15 +59,17 @@ module.exports.run = async (bot, message) => {
                                 `*${message.content}*`+
                                 `\n====================\n`+
                                 `${data}`)
-                                .setFooter('');
+                                .setFooter(`From: ${message.channel.name}`);
                             msg.edit(info);
                         })
                         .catch(error => {
-                            info.setFooter(`Translate Failed:${error.message}`);
+                            info.setFooter(`Translate Failed:${error}`);
                             msg.edit(info);
                         });
                     })
                     .catch(err => {
+                        info.setFooter(`Translate Failed:${error}`);
+                        msg.edit(info);
                         console.error(`[TranslateError]${err.message}`);
                     });
             }
