@@ -89,7 +89,7 @@ Promise.all([loadconfigs, loadcommands, loadplugins])
         }
         
         if(bot.configs.get('route') == 'Test Server'){  // 测试代码块,仅允许测试服运行
-            let test = require(`./test.js`);
+            let test = require(`./test_image.js`);
             console.debug(`[${test.help.name}] is running...`);
         }
     });

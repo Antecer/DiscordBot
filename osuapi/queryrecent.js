@@ -87,7 +87,7 @@ async function get_recent(apikey, userid, mode, type, perfect=0){
             case 1:
                 for(let i=0, len = recents.length; i<len; i++){
                     let rec = recents[i];
-                    if(rec['perfect'] === '1'){
+                    if(rec['perfect'] == '1'){
                         recent = rec;
                         break;
                     }
@@ -97,22 +97,24 @@ async function get_recent(apikey, userid, mode, type, perfect=0){
                 }
                 break;
             case 2:
-                recents.sort((a, b) => {// 降序排序
-                    return Number(b['score']) - Number(a['score'])
-                });
-                for(let i=0, len = recents.length; i<len; i++){
-                    let rec = recents[i];
-                    if(rec['rank'] !== 'F'){
+                let scorelist = [];
+                for(let rec of recents){
+                    if(rec['rank'] != 'F') scorelist.push(parseInt(rec['score']));
+                }
+                if(scorelist.length == 0){
+                    for(let rec of recents) scorelist.push(parseInt(rec['score']));
+                }
+                let scoremax = Math.max.apply(null, scorelist);
+                for(let rec of recents){
+                    if(parseInt(rec['score']) == scoremax){
                         recent = rec;
                         break;
-                    }
-                    if((i + 1) === len){
-                        recent = recents[0];
-                    }
+                    } 
                 }
                 break;
             default:
                 recent = recents[0];
+                break;
         }
 
         // 获取用户名string
