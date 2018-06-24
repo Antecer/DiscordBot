@@ -98,7 +98,7 @@ async function get_recent(apikey, userid, mode, type, perfect=0){
                 break;
             case 2:
                 recents.sort((a, b) => {// 降序排序
-                    return (a['score'] - b['score'] ? -1 : 1 );
+                    return Number(b['score']) - Number(a['score'])
                 });
                 for(let i=0, len = recents.length; i<len; i++){
                     let rec = recents[i];
