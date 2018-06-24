@@ -11,4 +11,5 @@
 # 4）!/mtk/one.txt	保留/mtk/one.txt文件
 
 /node_modules/
+/osuapi/recimg/
 debugdata.json
