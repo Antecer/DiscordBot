@@ -14,11 +14,13 @@ const MicrosoftYaHeiUI_Path = process.cwd() + '/fonts/MicrosoftYaHeiUI.ttf';
 
 // 载入skin皮肤文件
 var skins = {}, skin = {};
-fs.readdirSync(osuskins).filter(f => f.indexOf('.') < 0).forEach(skin =>{
+fs.readdirSync(osuskins).filter(f => fs.lstatSync(`${osuskins}${f}`).isDirectory()).forEach(skin =>{
     skins[skin] = {};
     let skinfiles = fs.readdirSync(`${osuskins}${skin}`);
     skinfiles.forEach(file => {
-        skins[skin][file.split('.')[0].toLowerCase()] = `${osuskins}${skin}/${file}`;
+        if(/png|jpg|jpeg/.test(file.split('.')[1].toLowerCase())){
+            skins[skin][file.split('.')[0].toLowerCase()] = `${osuskins}${skin}/${file}`;
+        }
     });
 });
 // 加载默认主题皮肤
@@ -116,7 +118,6 @@ async function get_recent(apikey, userid, mode, type, perfect=0){
                 recent = recents[0];
                 break;
         }
-
         // 获取用户名string
         let transfer_username = new Promise((resolve, reject) => {
             resolve(username);
@@ -152,15 +153,10 @@ async function get_recent(apikey, userid, mode, type, perfect=0){
                     beatimg.push(chunk);
                 });
                 res.on("end", () => {
-                    sharp(Buffer.concat(beatimg))
-                        .toFormat('jpeg')
-                        .toBuffer()
-                        .then(value => {
-                            resolve(Buffer.concat(beatimg));
-                        })
-                        .catch(err => {
-                            resolve(err);
-                        });
+                    sharp(Buffer.concat(beatimg)).toBuffer((err, data, info) => {
+                        if(err) resolve(err);
+                        else resolve(data);
+                    });
                 });
                 res.on("error", err => {
                     resolve(err);
@@ -169,284 +165,481 @@ async function get_recent(apikey, userid, mode, type, perfect=0){
                 resolve(err);
             });
         });
-
+    
         // 传递参数到下一个环节
-        return Promise.all([
+        return Promise
+            .all([
                 transfer_username,
                 transfer_recent,
                 get_beatmaps_func,
                 get_beatmapimg_func
-            ]).catch(err => { return err});
-    }).then(results => {
-        if(results.toString().indexOf('Error') > -1) return results;
-        let username = results[0];
-        let recent = results[1];
-        let beatmap = JSON.parse(results[2])[0];
-        let backimg = results[3];
-
-        const titlebar = new Buffer.from(
-            `<svg width="1366" height="768">
-                <rect x="0" y="0" width="1366" height="768" fill="#000" fill-opacity="0.4"/>
-                <rect x="0" y="0" width="1366" height="96" fill="#000" fill-opacity="0.8"/>
-                <text style="font-size: 30px; line-height:100%;" x="5" y="22" fill="#FFF">
-                    Test Coding...
-                </text>
-            </svg>`
-        );
-
+            ]).catch(err => {
+                return err
+            });
+    })
+    .then(result => {// 合成recent快照
+        if(result.toString().indexOf('Error') > -1){
+            return result;
+        }
+        let username = result[0];
+        let recent = result[1];
+        let beatmap = JSON.parse(result[2])[0];
+        let backimg = result[3];
+    
+        // 载入beatmap背景图
         let recentimg = backimg.toString().startsWith('[sharpErr]') ? sharp(skin['defaultbg']) : sharp(backimg);
-        return recentimg.resize(1366, 768).toBuffer()
-            .then(buff => {  // 叠加标题栏
-                return sharp(buff).overlayWith(titlebar, {gravity: sharp.gravity.northwest}).toBuffer();
-            }).then(buff => {// 叠加ranking-panel结算背景图
-                return new Promise((resolve, reject) => {
-                    sharp(skin['ranking-panel']).toBuffer((err, data, info) => {
-                        if(info.height <= 668){
-                            sharp(buff).overlayWith(data, {left: 0, top: 100}).toBuffer()
-                                .then(buf => { resolve(buf); });
-                        }else{
-                            sharp(data).resize(info.width, 668).crop(sharp.gravity.north).toBuffer()
-                                .then(buf =>{
-                                    sharp(buff).overlayWith(buf, {left: 0, top: 100}).toBuffer()
-                                        .then(b => { resolve(b); });
-                                });
-                        }                    
-                    });
+    
+    // 设置画布尺寸
+    let canvasW = 1366;
+    let canvasH = 768;
+    let zoomval = canvasH/600;
+    // 创建原始尺寸绘图容器
+    const frame = new Buffer.from(`<svg width="800" height="600"></svg>`); 
+    // 设置画布遮罩
+    const mask = new Buffer.from( 
+        `<svg width="${canvasW}" height="${canvasH}">
+            <rect x="0" y="0" width="${canvasW}" height="${canvasH}" fill="#000" fill-opacity="0.4"/>
+            <rect x="0" y="0" width="${canvasW}" height="${75*zoomval}" fill="#000" fill-opacity="0.8"/>
+        </svg>`
+    );
+    // 设置标题文字
+    const title = new Buffer.from(
+        `<svg width="800" height="600">
+            <text class="h1" x="3" y="${1+17}" font-size="16.92" fill="#FFF">
+                Test Coding... This is test text!
+            </text>
+            <text class="h2" x="3" y="${26+12}" font-size="12.3" fill="#FFF">
+                Test Coding... This is test text!
+            </text>
+            <text class="h3" x="3" y="${45+13}" font-size="12.9" fill="#FFF">
+                Test Coding... This is test text!
+            </text>
+        </svg>`
+    );
+
+    // 绘制画布背景
+    let canvas = new Promise((resolve, reject) => {
+        sharp(mask).toBuffer()
+        .then(buff => {// 添加背景图片
+            return recentimg.resize(canvasW, canvasH).toBuffer()
+            .then(buf => {
+                return sharp(buf).overlayWith(buff).toBuffer();
+            });
+        })
+        .then(buff => {// 叠加 ranking-panel 图片
+            return sharp(skin['ranking-panel']).toBuffer({ resolveWithObject: true })
+            .then(res => {
+                let imgW = Math.round(res.info.width*zoomval*0.78);
+                let imgH = Math.round(res.info.height*zoomval*0.78);
+                let cutW = imgW > canvasW ? canvasW : imgW;
+                let cutH = imgH > (canvasH - Math.round(80*zoomval)) ? (canvasH - Math.round(80*zoomval)) : imgH;
+                return sharp(res.data).resize(imgW, imgH).extract({left:0, top:0, width:cutW, height:cutH}).toBuffer()
+                .then(buf => {
+                    return sharp(buff).overlayWith(buf, {top: Math.round(80*zoomval), left: 0}).toBuffer();
                 });
-            }).then(buff => {// 绘制Back图标[左下角]
-                return sharp(buff).overlayWith(skin['menu-back'], {gravity: sharp.gravity.southwest}).toBuffer();
-            }).then(buff => {// 绘制Ranking图表框[左下居中]
-                return sharp(skin['ranking-graph']).resize(342, 160).crop(sharp.gravity.north).toBuffer()
-                    .then(buf =>{ return sharp(buff).overlayWith(buf, {left: 275, top: 768}).toBuffer(); });
-            }).then(buff => {// 绘制Ranking标题图[右上角]
-                return sharp(buff).overlayWith(skin['ranking-title'], {left: 1366 - 404, top: 0}).toBuffer();
-            }).then(buff => {// 绘制Score
-                let scoreval = '00000000'.slice(recent['score'].length) + recent['score'];
-                return new Promise((resolve, reject) => {
+            });
+        })
+        .then(buff => {// 叠加 menu-back 图片
+            return sharp(skin['menu-back']).toBuffer({ resolveWithObject: true })
+            .then(res => {
+                let imgW = Math.round(res.info.width*zoomval*0.8);
+                let imgH = Math.round(res.info.height*zoomval*0.8);
+                return sharp(res.data).resize(imgW, imgH).toBuffer()
+                .then(buf => {
+                    return sharp(buff).overlayWith(buf, {gravity: sharp.gravity.southwest}).toBuffer();
+                });
+            });
+        })
+        .then(buff => {// 叠加 ranking-graph 图片
+            return sharp(skin['ranking-graph']).toBuffer({ resolveWithObject: true })
+            .then(res => {
+                let imgW = Math.round(res.info.width*zoomval*0.78);
+                let imgH = Math.round(res.info.height*zoomval*0.78);
+                let maxH = imgH > Math.round(125*zoomval) ? Math.round(125*zoomval) : imgH;
+                return sharp(res.data).resize(imgW, imgH)
+                .extract({left:0, top:0, width: imgW, height: maxH }).toBuffer()
+                .then(buf => {
+                    return sharp(buff).overlayWith(buf, {
+                        left: Math.round(200*zoomval),
+                        top: Math.round(475*zoomval)
+                    }).toBuffer();
+                });
+            });
+        })
+        .then(buff => {// 叠加 hit[300,100,50,300g,100k,0] 图片
+            return new Promise((resolve1, reject1) => { resolve1(buff); })
+            .then(buf => {// 叠加 hit300 图片
+                    return sharp(skin['hit300']).toBuffer({ resolveWithObject: true }).then(res => {
+                        let imgW = Math.round(res.info.width*zoomval*0.4);
+                        let imgH = Math.round(res.info.height*zoomval*0.4);
+                        let imgX = Math.round(50*zoomval-imgW/2<0 ? 0 : 50*zoomval-imgW/2);// sharp不允许覆盖的图片超出画布
+                        let imgY = Math.round(200*zoomval-imgH/2);
+                        return sharp(res.data).resize(imgW, imgH).toBuffer().then(b => {
+                            return sharp(buf).overlayWith(b, {left:imgX, top:imgY}).toBuffer();
+                        });
+                    });
+            })
+            .then(buf => {// 叠加 hit100 图片
+                    return sharp(skin['hit100']).toBuffer({ resolveWithObject: true }).then(res => {
+                        let imgW = Math.round(res.info.width*zoomval*0.4);
+                        let imgH = Math.round(res.info.height*zoomval*0.4);
+                        let imgX = Math.round(50*zoomval-imgW/2<0 ? 0 : 50*zoomval-imgW/2);
+                        let imgY = Math.round(275*zoomval-imgH/2);
+                        return sharp(res.data).resize(imgW, imgH).toBuffer().then(b => {
+                            return sharp(buf).overlayWith(b, {left:imgX, top:imgY}).toBuffer();
+                        });
+                    });
+            })
+            .then(buf => {// 叠加 hit50 图片
+                    return sharp(skin['hit50']).toBuffer({ resolveWithObject: true }).then(res => {
+                        let imgW = Math.round(res.info.width*zoomval*0.4);
+                        let imgH = Math.round(res.info.height*zoomval*0.4);
+                        let imgX = Math.round(50*zoomval-imgW/2<0 ? 0 : 50*zoomval-imgW/2);
+                        let imgY = Math.round(350*zoomval-imgH/2);
+                        return sharp(res.data).resize(imgW, imgH).toBuffer().then(b => {
+                            return sharp(buf).overlayWith(b, {left:imgX, top:imgY}).toBuffer();
+                        });
+                    });
+            })
+            .then(buf => {// 叠加 hit300g 图片
+                    return sharp(skin['hit300g']).toBuffer({ resolveWithObject: true }).then(res => {
+                        let imgW = Math.round(res.info.width*zoomval*0.4);
+                        let imgH = Math.round(res.info.height*zoomval*0.4);
+                        let imgX = Math.round(300*zoomval-imgW/2<0 ? 0 : 300*zoomval-imgW/2);
+                        let imgY = Math.round(200*zoomval-imgH/2);
+                        return sharp(res.data).resize(imgW, imgH).toBuffer().then(b => {
+                            return sharp(buf).overlayWith(b, {left:imgX, top:imgY}).toBuffer();
+                        });
+                    });
+            })
+            .then(buf => {// 叠加 hit100k 图片
+                    return sharp(skin['hit100k']).toBuffer({ resolveWithObject: true }).then(res => {
+                        let imgW = Math.round(res.info.width*zoomval*0.4);
+                        let imgH = Math.round(res.info.height*zoomval*0.4);
+                        let imgX = Math.round(300*zoomval-imgW/2<0 ? 0 : 300*zoomval-imgW/2);
+                        let imgY = Math.round(275*zoomval-imgH/2);
+                        return sharp(res.data).resize(imgW, imgH).toBuffer().then(b => {
+                            return sharp(buf).overlayWith(b, {left:imgX, top:imgY}).toBuffer();
+                        });
+                    });
+            })
+            .then(buf => {// 叠加 hit0 图片
+                    return sharp(skin['hit0']).toBuffer({ resolveWithObject: true }).then(res => {
+                        let imgW = Math.round(res.info.width*zoomval*0.4);
+                        let imgH = Math.round(res.info.height*zoomval*0.4);
+                        let imgX = Math.round(300*zoomval-imgW/2<0 ? 0 : 300*zoomval-imgW/2);
+                        let imgY = Math.round(350*zoomval-imgH/2);
+                        return sharp(res.data).resize(imgW, imgH).toBuffer().then(b => {
+                            return sharp(buf).overlayWith(b, {left:imgX, top:imgY}).toBuffer();
+                        });
+                    });
+            });
+        })
+        .then(buff => {// 叠加 ranking-maxcombo 图片
+            return sharp(skin['ranking-maxcombo']).toBuffer({ resolveWithObject: true }).then(res => {
+                let imgW = Math.round(res.info.width*zoomval*0.78);
+                let imgH = Math.round(res.info.height*zoomval*0.78);
+                let imgX = Math.round(6*zoomval);
+                let imgY = Math.round(375*zoomval);
+                return sharp(res.data).resize(imgW, imgH).toBuffer().then(buf => {
+                    return sharp(buff).overlayWith(buf, {left:imgX, top:imgY}).toBuffer();
+                });
+            });
+        })
+        .then(buff => {// 叠加 ranking-accuracy 图片
+            return sharp(skin['ranking-accuracy']).toBuffer({ resolveWithObject: true }).then(res => {
+                let imgW = Math.round(res.info.width*zoomval*0.78);
+                let imgH = Math.round(res.info.height*zoomval*0.78);
+                let imgX = Math.round(228*zoomval);
+                let imgY = Math.round(375*zoomval);
+                return sharp(res.data).resize(imgW, imgH).toBuffer().then(buf => {
+                    return sharp(buff).overlayWith(buf, {left:imgX, top:imgY}).toBuffer();
+                });
+            });
+        })
+        .then(buff => {
+            resolve(buff);
+        });
+    });
+
+    // 绘制结算界面左边部分
+    let frameLeft = new Promise((resolve, reject) => {
+        sharp(frame).toBuffer()
+        .then(buff => {// 叠加 ranking-perfect
+            if(Number(recent['perfect']) !== 1) return buff;
+            return sharp(skin['ranking-perfect']).toBuffer({ resolveWithObject: true })
+            .then(res => {
+                let imgW = Math.round(res.info.width*0.78); let imgH = Math.round(res.info.height*0.78);
+                return sharp(res.data).resize(imgW, imgH).toBuffer()
+                .then(buf => {
+                    return sharp(buff).overlayWith(buf, {
+                        left:Math.round(325-imgW/2), 
+                        top:Math.round(537-imgH/2)
+                    }).toBuffer();
+                })
+            });
+        })
+        .then(buff => {// 叠加 score
+            let scoreval = recent['score'];
+            if(scoreval.length < 8) scoreval = '00000000'.slice(scoreval.length) + scoreval;
+            return new Promise((resolve1, reject1) => {
+                sharp(skin[`score-0`]).toBuffer((err, data, info) => {
+                    const scoreW = info.width;
+                    const scoreH = info.height;
+                    const spacing = 3;
+                    const scorebar = new Buffer.from(
+                        `<svg width="${scoreval.length*(scoreW+spacing)-spacing}" height="${scoreH}"></svg>`
+                    );
                     (function sive(buf, i){
                         if(i === scoreval.length){
-                            resolve(buf);
+                            sharp(buff).overlayWith(buf, {
+                                left: Math.round(274-((scoreval.length*(scoreW+spacing)-spacing)/2)), 
+                                top: Math.round(117-(scoreH/2))
+                            }).toBuffer().then(b => {
+                                resolve1(b);
+                            });
                         }else{
+                            let scorechar = skin[`score-${scoreval.charAt(i)}`];
                             sharp(buf)
-                                .overlayWith(skin[`score-${scoreval.charAt(i)}`], {left: 133 + 55 * i, top: 118})
+                                .overlayWith(scorechar, {left: i*(scoreW+spacing), top: 0})
                                 .toBuffer()
                                 .then(b =>{ sive(b, i+1); });
                         }
-                    })(buff, 0);
-                });
-            }).then(buff => {// 绘制Combo 300
-                return sharp(skin['hit300']).resize(64, 64).toBuffer()
-                    .then(buf => { return sharp(buff).overlayWith(buf, {left: 32, top: 244}).toBuffer(); });
-            }).then(buff => {// 绘制Combo 100
-                return sharp(skin['hit100']).resize(64, 64).toBuffer()
-                    .then(buf => { return sharp(buff).overlayWith(buf, {left: 32, top: 320}).toBuffer(); });
-            }).then(buff => {// 绘制Combo 50
-                return sharp(skin['hit50']).resize(64, 64).toBuffer()
-                    .then(buf => { return sharp(buff).overlayWith(buf, {left: 32, top: 416}).toBuffer(); });
-            }).then(buff => {// 绘制Combo 300激
-                return sharp(skin['hit300g']).resize(64, 64).toBuffer()
-                    .then(buf => { return sharp(buff).overlayWith(buf, {left: 352, top: 224}).toBuffer(); });
-            }).then(buff => {// 绘制Combo 100可
-                return sharp(skin['hit100k']).resize(64, 64).toBuffer()
-                    .then(buf => { return sharp(buff).overlayWith(buf, {left: 352, top: 320}).toBuffer(); });
-            }).then(buff => {// 绘制Combo X
-                return sharp(skin['hit0']).resize(64, 64).toBuffer()
-                    .then(buf => { return sharp(buff).overlayWith(buf, {left: 352, top: 416}).toBuffer(); });
-            }).then(buff => {// 绘制count300
-                let scoreval = recent['count300'] + 'x';
-                return new Promise((resolve, reject) => {
-                    (function sive(buf, i){
-                        if(i === scoreval.length){
-                            resolve(buf);
-                        }else{
-                            sharp(skin[`score-${scoreval.charAt(i)}`]).resize(45, 57).toBuffer()
-                                .then(scorestr => {
-                                    sharp(buf).overlayWith(scorestr, {left: 128 + 45 * i, top: 230}).toBuffer()
-                                        .then(b =>{ sive(b, i+1); });
-                                })
-                        }
-                    })(buff, 0);
-                });
-            }).then(buff => {// 绘制count100
-                let scoreval = recent['count100'] + 'x';
-                return new Promise((resolve, reject) => {
-                    (function sive(buf, i){
-                        if(i === scoreval.length){
-                            resolve(buf);
-                        }else{
-                            sharp(skin[`score-${scoreval.charAt(i)}`]).resize(45, 57).toBuffer()
-                                .then(scorestr => {
-                                    sharp(buf).overlayWith(scorestr, {left: 128 + 45 * i, top: 326}).toBuffer()
-                                        .then(b =>{ sive(b, i+1); });
-                                })
-                        }
-                    })(buff, 0);
-                });
-            }).then(buff => {// 绘制count50
-                let scoreval = recent['count50'] + 'x';
-                return new Promise((resolve, reject) => {
-                    (function sive(buf, i){
-                        if(i === scoreval.length){
-                            resolve(buf);
-                        }else{
-                            sharp(skin[`score-${scoreval.charAt(i)}`]).resize(45, 57).toBuffer()
-                                .then(scorestr => {
-                                    sharp(buf).overlayWith(scorestr, {left: 128 + 45 * i, top: 422}).toBuffer()
-                                        .then(b =>{ sive(b, i+1); });
-                                })
-                        }
-                    })(buff, 0);
-                });
-            }).then(buff => {// 绘制countgeki
-                let scoreval = recent['countgeki'] + 'x';
-                return new Promise((resolve, reject) => {
-                    (function sive(buf, i){
-                        if(i === scoreval.length){
-                            resolve(buf);
-                        }else{
-                            sharp(skin[`score-${scoreval.charAt(i)}`]).resize(45, 57).toBuffer()
-                                .then(scorestr => {
-                                    sharp(buf).overlayWith(scorestr, {left: 448 + 45 * i, top: 230}).toBuffer()
-                                        .then(b =>{ sive(b, i+1); });
-                                })
-                        }
-                    })(buff, 0);
-                });
-            }).then(buff => {// 绘制countkatu
-                let scoreval = recent['countkatu'] + 'x';
-                return new Promise((resolve, reject) => {
-                    (function sive(buf, i){
-                        if(i === scoreval.length){
-                            resolve(buf);
-                        }else{
-                            sharp(skin[`score-${scoreval.charAt(i)}`]).resize(45, 57).toBuffer()
-                                .then(scorestr => {
-                                    sharp(buf).overlayWith(scorestr, {left: 448 + 45 * i, top: 326}).toBuffer()
-                                        .then(b =>{ sive(b, i+1); });
-                                })
-                        }
-                    })(buff, 0);
-                });
-            }).then(buff => {// 绘制countmiss
-                let scoreval = recent['countmiss'] + 'x';
-                return new Promise((resolve, reject) => {
-                    (function sive(buf, i){
-                        if(i === scoreval.length){
-                            resolve(buf);
-                        }else{
-                            sharp(skin[`score-${scoreval.charAt(i)}`]).resize(45, 57).toBuffer()
-                                .then(scorestr => {
-                                    sharp(buf).overlayWith(scorestr, {left: 448 + 45 * i, top: 422}).toBuffer()
-                                        .then(b =>{ sive(b, i+1); });
-                                })
-                        }
-                    })(buff, 0);
-                });
-            }).then(buff => {// 绘制maxcombo
-                let scoreval = recent['maxcombo'] + 'x';
-                return new Promise((resolve, reject) => {
-                    (function sive(buf, i){
-                        if(i === scoreval.length){
-                            resolve(buf);
-                        }else{
-                            sharp(skin[`score-${scoreval.charAt(i)}`]).resize(45, 57).toBuffer()
-                                .then(scorestr => {
-                                    sharp(buf).overlayWith(scorestr, {left: 24 + 45 * i, top: 528}).toBuffer()
-                                        .then(b =>{ sive(b, i+1); });
-                                })
-                        }
-                    })(buff, 0);
-                });
-            }).then(buff => {// 绘制accuracy
-                let accval = (6*parseFloat(recent['count300']) + 2*parseFloat(recent['count100']) + parseFloat(recent['count50']))
-                            /(6*(parseFloat(recent['count300'])+parseFloat(recent['count100'])+parseFloat(recent['count50'])+parseFloat(recent['countmiss'])));
-                let accuracy = Number(accval*100).toFixed(2) + '%';
-                return new Promise((resolve, reject) => {
-                    (function sive(buf, i, iwidth){
-                        if(i === accuracy.length){
-                            resolve(buf);
-                        }else{
-                            let accChar = accuracy.charAt(i);
-                            if (accChar == ".") accChar = "dot";
-                            if (accChar == "%") accChar = "percent";
-                            sharp(skin[`score-${accChar}`]).resize(null, 57).toBuffer((err, scorestr, info)=>{
-                                sharp(buf).overlayWith(scorestr, {left: iwidth, top: 528}).toBuffer()
-                                        .then(b =>{ sive(b, i+1, iwidth + info.width); });
-                            });
-                        }
-                    })(buff, 0, 310);
-                });
-            }).then(buff => {// 绘制PerfectPlay图标
-                if(recent['perfect'] == 1){
-                    return sharp(buff).overlayWith(skin['ranking-perfect'], {left: 266, top: 638}).toBuffer();
-                }else{
-                    return buff;
-                }
-            }).then(buff => {// 绘制Rank评价
-                return new Promise((resolve, reject) => {
-                    sharp(skin[`ranking-${recent['rank'].toLowerCase()}`]).toBuffer((err, rankimg, info)=>{
-                        sharp(buff).overlayWith(rankimg, {left: (1366 - 7 - info.width), top: 109}).toBuffer()
-                            .then(buf => {
-                                resolve(buf);
-                            });
-                    });
-                });
-            }).then(buff => {// 绘制Mods图标
-                let enabled_mods = recent['enabled_mods'];
-                return new Promise((resolve, reject) => {
-                    (function sive(buf, i, iwidth){
-                        if(i === modnames.length){
-                            resolve(buf);
-                        }else{
-                            if((enabled_mods & osumods[modnames[i]]) > 0){
-                                let modimg = skin[`selection-mod-${modnames[i].toLowerCase()}`];
-                                sharp(buf).overlayWith(modimg, {left: iwidth, top: 376}).toBuffer()
-                                    .then(b =>{ sive(b, i+1, iwidth-32); });
-                            }else{
-                                sive(buf, i+1, iwidth);
-                            }
-                        }
-                    })(buff, 0, 1262);
-                });
-            }).then(buff => {// 绘制Replay图标
-                return new Promise((resolve, reject) => {
-                    sharp(skin['pause-replay']).toBuffer((err, data, info) => {
-                        sharp(buff).overlayWith(data, {left: (1366 - info.width), top: 518}).toBuffer()
-                            .then(buf => {
-                                resolve(buf);
-                            });
-                    });
-                });
-            }).then(buff => {// 绘制Online-Users图标
-                return new Promise((resolve, reject) => {
-                    sharp(skin["online-users"]).toBuffer((err, data, info) => {
-                        sharp(buff).overlayWith(data, {left: (1366 - 99 - info.width), top: 768-info.height}).toBuffer()
-                            .then(buf => { resolve(buf); });
-                    });
-                });
-            }).then(buff => {// 绘制Show-Chat图标
-                return new Promise((resolve, reject) => {
-                    sharp(skin["show-chat"]).toBuffer((err, data, info) => {
-                        sharp(buff).overlayWith(data, {left: (1366 - 3 - info.width), top: 768-info.height}).toBuffer()
-                            .then(buf => { resolve(buf); });
-                    });
-                });
-            }).then(buff => {// 绘制latency延迟图标
-                return new Promise((resolve, reject) => {
-                    sharp(skin["latency"]).toBuffer((err, data, info) => {
-                        sharp(buff).overlayWith(data, {left: (1366 - 4 - info.width), top: (768 - 25 -info.height)}).toBuffer()
-                            .then(buf => { resolve(buf); });
-                    });
-                });
-            }).then(buff => {// 绘制fps帧率图标
-                return new Promise((resolve, reject) => {
-                    sharp(skin["fps"]).toBuffer((err, data, info) => {
-                        sharp(buff).overlayWith(data, {left: (1366 - 4 - info.width), top: (768 - 49 -info.height)}).toBuffer()
-                            .then(buf => { resolve(buf); });
-                    });
+                    })(scorebar, 0);
                 });
             });
-    }).catch(err => {
+        })
+        .then(buff => {// 叠加 count
+            return sharp(skin['score-0']).toBuffer({ resolveWithObject: true })
+            .then(res => {
+                let comboW = Math.round(res.info.width*0.9); let comboH = Math.round(res.info.height*0.9);
+                return new Promise((resolve1, reject1) => { resolve1(buff); })
+                .then(buf => {// 叠加 count300
+                        let countval = recent['count300'] + 'x';
+                        return (function sive(bf, i){
+                            if(i === countval.length){
+                                return bf;
+                            }else{
+                                let countchar = skin[`score-${countval.charAt(i)}`];
+                                return sharp(bf).overlayWith(countchar, {
+                                    left:100+i*comboW, 
+                                    top:Math.round(200-comboH/2)
+                                }).toBuffer().then(b =>{ return sive(b, i+1); });
+                            }
+                        })(buf, 0);
+                })
+                .then(buf => {// 叠加 count100
+                        let countval = recent['count100'] + 'x';
+                        return (function sive(bf, i){
+                            if(i === countval.length){
+                                return bf;
+                            }else{
+                                let countchar = skin[`score-${countval.charAt(i)}`];
+                                return sharp(bf).overlayWith(countchar, {
+                                    left:100+i*comboW, 
+                                    top:Math.round(275-comboH/2)
+                                }).toBuffer().then(b =>{ return sive(b, i+1); });
+                            }
+                        })(buf, 0);
+                })
+                .then(buf => {// 叠加 count50
+                        let countval = recent['count50'] + 'x';
+                        return (function sive(bf, i){
+                            if(i === countval.length){
+                                return bf;
+                            }else{
+                                let countchar = skin[`score-${countval.charAt(i)}`];
+                                return sharp(bf).overlayWith(countchar, {
+                                    left:100+i*comboW, 
+                                    top:Math.round(350-comboH/2)
+                                }).toBuffer().then(b =>{ return sive(b, i+1); });
+                            }
+                        })(buf, 0);
+                })
+                .then(buf => {// 叠加 count300g (countgeki)
+                        let countval = recent['countgeki'] + 'x';
+                        return (function sive(bf, i){
+                            if(i === countval.length){
+                                return bf;
+                            }else{
+                                let countchar = skin[`score-${countval.charAt(i)}`];
+                                return sharp(bf).overlayWith(countchar, {
+                                    left:350+i*comboW, 
+                                    top:Math.round(200-comboH/2)
+                                }).toBuffer().then(b =>{ return sive(b, i+1); });
+                            }
+                        })(buf, 0);
+                })
+                .then(buf => {// 叠加 count100k (countkatu)
+                        let countval = recent['countkatu'] + 'x';
+                        return (function sive(bf, i){
+                            if(i === countval.length){
+                                return bf;
+                            }else{
+                                let countchar = skin[`score-${countval.charAt(i)}`];
+                                return sharp(bf).overlayWith(countchar, {
+                                    left:350+i*comboW, 
+                                    top:Math.round(275-comboH/2)
+                                }).toBuffer().then(b =>{ return sive(b, i+1); });
+                            }
+                        })(buf, 0);
+                })
+                .then(buf => {// 叠加 count0 (countmiss)
+                        let countval = recent['countmiss'] + 'x';
+                        return (function sive(bf, i){
+                            if(i === countval.length){
+                                return bf;
+                            }else{
+                                let countchar = skin[`score-${countval.charAt(i)}`];
+                                return sharp(bf).overlayWith(countchar, {
+                                    left:350+i*comboW, 
+                                    top:Math.round(350-comboH/2)
+                                }).toBuffer().then(b =>{ return sive(b, i+1); });
+                            }
+                        })(buf, 0);
+                })
+            });
+        })
+        .then(buff => {// 叠加 MaxCombo
+            let dataStr = recent['maxcombo'] + 'x';
+            return (function sive(bf, i, strX){
+                if(i === dataStr.length){
+                    return bf;
+                }else{
+                    let charStr = dataStr.charAt(i);
+                    return sharp(skin[`score-${charStr}`]).toBuffer({ resolveWithObject: true }).then(res => {
+                        let charW = Math.round(res.info.width*0.9); let charH = Math.round(res.info.height*0.9);
+                        return sharp(bf).overlayWith(res.data, {left:strX, top:412}).toBuffer()
+                        .then(b =>{ return sive(b, i+1, strX + charW); });
+                    });
+                }
+            })(buff, 0, 18);
+        })
+        .then(buff => {// 叠加 Accuracy
+            let accuracy = (6*parseFloat(recent['count300']) + 2*parseFloat(recent['count100']) + parseFloat(recent['count50']))
+                        /(6*(parseFloat(recent['count300'])+parseFloat(recent['count100'])+parseFloat(recent['count50'])+parseFloat(recent['countmiss'])));
+            let dataStr = Number(accuracy*100).toFixed(2) + '%';
+            return (function sive(bf, i, strX){
+                if(i === dataStr.length){
+                    return bf;
+                }else{
+                    let charStr = dataStr.charAt(i);
+                    if (charStr == ".") charStr = "dot";
+                    if (charStr == "%") charStr = "percent";
+                    return sharp(skin[`score-${charStr}`]).toBuffer({ resolveWithObject: true }).then(res => {
+                        let charW = Math.round(res.info.width*0.9); let charH = Math.round(res.info.height*0.9);
+                        return sharp(bf).overlayWith(res.data, {left:strX, top:412}).toBuffer()
+                        .then(b =>{ return sive(b, i+1, strX + charW); });
+                    });
+                }
+            })(buff, 0, 242);
+        })
+        .then(buff => {// 缩放到合适尺寸输出
+            sharp(buff).resize(null, canvasH).toBuffer()
+            .then(buf => { resolve(buf); });
+        });
+    });
+
+    //return new Promise((resolve, reject) => {
+    // 绘制结算界面右边部分
+    let frameRight = new Promise((resolve, reject) => {
+        sharp(frame).toBuffer()
+        .then(buff => {// 叠加 ranking-title
+            return sharp(skin['ranking-title']).toBuffer({ resolveWithObject: true })
+            .then(res => {
+                let imgW = Math.round(res.info.width*0.78);
+                let imgH = Math.round(res.info.height*0.78);
+                let imgX = Math.round(800 - 25 - imgW);
+                return sharp(res.data).resize(imgW, imgH).toBuffer()
+                .then(buf => {
+                    return sharp(buff).overlayWith(buf, {left: imgX, top: 0 }).toBuffer();
+                });
+            });
+        })
+        .then(buff => {// 叠加 ranking 评价
+            return sharp(skin[`ranking-${recent['rank'].toLowerCase()}`]).toBuffer({ resolveWithObject: true })
+            .then(res => {
+                let imgW = Math.round(res.info.width*0.78);
+                let imgH = Math.round(res.info.height*0.78);
+                let imgX = Math.round(800 - 150 - imgW/2);
+                let imgY = Math.round(250 - imgH/2);
+                return sharp(res.data).resize(imgW, imgH).toBuffer()
+                .then(buf => {
+                    return sharp(buff).overlayWith(buf, {left: imgX, top: imgY}).toBuffer();
+                });
+            });
+        })
+        .then(buff => {// 叠加 Mods 图标
+            let enabled_mods = recent['enabled_mods'];
+            return (function sive(bf, i, strX){
+                if(i === modnames.length){
+                    return bf;
+                }else{
+                    if((enabled_mods & osumods[modnames[i]]) > 0){
+                        return sharp(skin[`selection-mod-${modnames[i].toLowerCase()}`])
+                        .toBuffer({ resolveWithObject: true})
+                        .then(res => {
+                            let imgW = Math.round(res.info.width*0.78);
+                            let imgH = Math.round(res.info.height*0.78);
+                            let imgX = Math.round(strX - imgW/2);
+                            let imgY = Math.round(325 - imgH/2);
+                            return sharp(bf).overlayWith(res.data, {left: imgX, top: imgY}).toBuffer()
+                            .then(b =>{ return sive(b, i+1, strX - imgW/2); });
+                        });
+                    }else{
+                        return sive(bf, i+1, strX);
+                    }
+                }
+            })(buff, 0, (800-50));
+        })
+        .then(buff => {// 叠加 pause-replay
+            return sharp(skin[`pause-replay`]).toBuffer({ resolveWithObject: true })
+            .then(res => {
+                let imgW = Math.round(res.info.width*0.78);
+                let imgH = Math.round(res.info.height*0.78);
+                let imgX = Math.round(800 - imgW);
+                let imgY = Math.round(450 - imgH/2);
+                return sharp(res.data).resize(imgW, imgH).toBuffer()
+                .then(buf => {
+                    return sharp(buff).overlayWith(buf, {left: imgX, top: imgY}).toBuffer();
+                });
+            });
+        })
+        .then(buff => {// 缩放到合适尺寸输出
+            sharp(buff).resize(null, canvasH).toBuffer()
+            .then(buf => { resolve(buf); });
+        });
+    });
+
+    // 绘制标题栏部分
+    let frameTitle = new Promise((resolve, reject) => {
+        sharp(title).png().toBuffer()
+        .then(buff => {// 缩放到合适尺寸输出
+            sharp(buff).resize(null, canvasH).toBuffer()
+            .then(buf => { resolve(buf); });
+        });
+    });
+    
+    // 组合recent结算快照
+    return Promise
+        .all([canvas, frameLeft, frameRight, frameTitle])
+        .then(results => {
+            return sharp(results[0]).toBuffer()
+            .then(buff => {// 合成左边积分区域
+                return sharp(buff).overlayWith(results[1], {gravity: sharp.gravity.west}).toBuffer();
+            })
+            .then(buff => {// 合成右边评价区域
+                return sharp(buff).overlayWith(results[2], {gravity: sharp.gravity.east}).toBuffer();
+            })
+            .then(buff => {// 合成顶部标题区域
+                return sharp(buff).overlayWith(results[3], {gravity: sharp.gravity.west}).toBuffer();
+            })
+        })
+        .catch(err => {
+            return err
+        });
+    })
+    .catch(err => {// 捕获错误
         return err;
     });
 };
