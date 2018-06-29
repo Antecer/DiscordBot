@@ -18,7 +18,7 @@ fs.readdirSync(osuskins).filter(f => fs.lstatSync(`${osuskins}${f}`).isDirectory
     skins[skin] = {};
     let skinfiles = fs.readdirSync(`${osuskins}${skin}`);
     skinfiles.forEach(file => {
-        if(/png|jpg|jpeg/.test(file.split('.')[1].toLowerCase())){
+        if(/png|jpg|jpeg/.test(file)){
             skins[skin][file.split('.')[0].toLowerCase()] = `${osuskins}${skin}/${file}`;
         }
     });
