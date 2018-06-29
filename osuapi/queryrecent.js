@@ -358,7 +358,7 @@ async function get_recent(apikey, userid, mode, type, perfect=0){
             });
         })
         .then(buff => {// 叠加 network 图片
-            return sharp(buff).overlayWith(buff, {gravity: sharp.gravity.southeast}).toBuffer();
+            return sharp(buff).overlayWith(skin['network'], {gravity: sharp.gravity.southeast}).toBuffer();
         })
         .then(buff => {
             resolve(buff);
