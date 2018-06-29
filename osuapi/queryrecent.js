@@ -208,7 +208,7 @@ async function get_recent(apikey, userid, mode, type, perfect=0){
             <text class="h1" x="3" y="${1+17}" font-family="Aller Light" font-size="16.92" fill="#FFF">
                 ${beatmap["artist"]} - ${beatmap["title"]} [${beatmap["version"]}]
             </text>
-            <text class="h2" x="3" y="${26+12}" font-family="Aller Light" font-size="12.3" fill="#FFF">
+            <text class="h2" x="3" y="${26+12}" font-family="Aller" font-size="12.3" fill="#FFF">
                 Beatmap by ${beatmap["creator"]}
             </text>
             <text class="h3" x="3" y="${45+13}" font-family="Microsoft YaHei UI" font-size="12.9" fill="#FFF">
@@ -356,6 +356,9 @@ async function get_recent(apikey, userid, mode, type, perfect=0){
                     return sharp(buff).overlayWith(buf, {left:imgX, top:imgY}).toBuffer();
                 });
             });
+        })
+        .then(buff => {// 叠加 network 图片
+            return sharp(buff).overlayWith(buff, {gravity: sharp.gravity.southeast}).toBuffer();
         })
         .then(buff => {
             resolve(buff);
