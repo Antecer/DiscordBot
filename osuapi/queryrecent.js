@@ -205,14 +205,14 @@ async function get_recent(apikey, userid, mode, type, perfect=0){
     // 设置标题文字
     const title = new Buffer.from(
         `<svg width="800" height="600">
-            <text class="h1" x="3" y="${1+17}" font-size="16.92" fill="#FFF">
-                Test Coding... This is test text!
+            <text class="h1" x="3" y="${1+17}" font-family="Aller Light" font-size="16.92" fill="#FFF">
+                ${beatmap["artist"]} - ${beatmap["title"]} [${beatmap["version"]}]
             </text>
-            <text class="h2" x="3" y="${26+12}" font-size="12.3" fill="#FFF">
-                Test Coding... This is test text!
+            <text class="h2" x="3" y="${26+12}" font-family="Aller Light" font-size="12.3" fill="#FFF">
+                Beatmap by ${beatmap["creator"]}
             </text>
-            <text class="h3" x="3" y="${45+13}" font-size="12.9" fill="#FFF">
-                Test Coding... This is test text!
+            <text class="h3" x="3" y="${45+13}" font-family="Microsoft YaHei UI" font-size="12.9" fill="#FFF">
+                Played by ${username} on ${recent["date"].toString() .replace(/-/g, '/')}.
             </text>
         </svg>`
     );
