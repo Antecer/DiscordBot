@@ -64,6 +64,9 @@ async function get_recent(apikey, userid, mode, type, perfect=0){
     // 获取玩家历史
     let get_user_recent_func = new Promise((resolve, reject) => {
         let url = `https://osu.ppy.sh/api/get_user_recent?&k=${apikey}&u=${userid}&m=${mode}&type=${type}&limit=${"50"}`;
+        if(perfect == 3){
+            url = `https://osu.ppy.sh/api/get_user_best?&k=${apikey}&u=${userid}&m=${mode}&type=${type}&limit=${"1"}`;
+        }
         https.get(url, res => {
             let data = '';
             res.on("data", chunk => {

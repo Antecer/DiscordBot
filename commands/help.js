@@ -13,6 +13,7 @@ const cmdlist =
 [08]: !r[ "name"|id] <osu!std recent last>
 [09]: !tr[ "name"|id] <osu!std recent top>
 [10]: !pr[ "name"|id] <osu!std recent perfect>
+[11]: !br[ "name"|id] <osu!std top score>
 \`\`\``;
 
 module.exports.run = async (bot, message, args) => {
