@@ -51,7 +51,7 @@ async function get_recent(apikey, userid, mode, type, perfect=0){
                 data += chunk;
             });
             res.on("end", () => {
-                if (data === "[]") { reject(`Error: Username \`${userid}\` does not exist!`) }
+                if (data === "[]") { reject(`Error: Username <${userid}> does not exist!`) }
                 resolve(data);
             });
             res.on("error", err => {
@@ -73,7 +73,7 @@ async function get_recent(apikey, userid, mode, type, perfect=0){
                 data += chunk;
             });
             res.on("end", () => {
-                if (data === "[]") { reject(`Error: \`${userid}\` didn't play osu! in 24 hours.`) }
+                if (data === "[]") { reject(`Error: <${userid}> didn't play osu! in 24 hours.`) }
                 resolve(data);
             });
             res.on("error", err => {

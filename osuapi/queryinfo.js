@@ -17,7 +17,7 @@ async function get_user(apikey, userid, mode, type){
                 data += chunk;
             });
             res.on("end", () => {
-                if (data === "[]") { reject(`Error: Username \`${userid}\` does not exist!`) }
+                if (data === "[]") { reject(`Error: Username <${userid}> does not exist!`) }
                 else { resolve(data); }
             });
             res.on("error", err => {
