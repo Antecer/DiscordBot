@@ -58,7 +58,7 @@ module.exports.run = async (bot, message) => {
                             info.setDescription(
                                 `*${message.content}*`+
                                 `\n====================\n`+
-                                `${data}`)
+                                `${data.replace(/！/g, '!')}`)
                                 .setFooter(`From: #${message.channel.name}`);
                             msg.edit(info);
                         })
