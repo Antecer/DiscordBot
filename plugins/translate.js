@@ -55,10 +55,11 @@ module.exports.run = async (bot, message) => {
                         .then(html =>{
                             let data = "";
                             JSON.parse(html)[0].forEach(t => { data += t[0]; });
+                            data.replace(/！/g, "!");
                             info.setDescription(
                                 `*${message.content}*`+
                                 `\n====================\n`+
-                                `${data.replace(/！/g, '!')}`)
+                                `${data}`)
                                 .setFooter(`From: #${message.channel.name}`);
                             msg.edit(info);
                         })
