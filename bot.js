@@ -106,26 +106,25 @@ Promise.all([loadconfigs, loadcommands, loadplugins])
 
         // 机器人命令响应总开关(特殊允许!ping响应，以测试机器人是否开始工作)
         if((botcfgs.switch == "false") && (!command.startsWith("!ping"))) return;
+        // 执行前缀匹配的命令
         if(command.startsWith(prefix)){
-            // 执行匹配的命令
             let cmd = bot.commands.get(command.slice(prefix.length));
             if(cmd) cmd.run(bot, message, args);
-        }else{
-            // 遍历并运行所有插件
-            for(let plugin of Array.from(bot.plugins.keys())){
-                if(bot.configs.get("plugins")[plugin] == "false") continue;
-                bot.plugins.get(plugin).run(bot, message);
-            }
+        }
+        // 遍历并运行所有插件
+        for(let plugin of Array.from(bot.plugins.keys())){
+            if(bot.configs.get("plugins")[plugin] == "false") continue;
+            bot.plugins.get(plugin).run(bot, message);
         }
     });
     // 新成员加入服务器事件
     bot.on("guildMemberAdd", async member => {
-        const channel = member.guild.channels.find(c => c.name === "amusingkeypad");
+        const channel = member.guild.channels.find(c => c.name === "general");
         if(channel)
         {
             channel.send(
                 `Welcome to the server, ${member}`
-                +`\nPlease set your _nickname_ to osu! name.`
+                +`\nPlease set _nickname_ to **[country|language] osu!name**.`
                 +`\nInput _!help_ to get my command list.`
             );
         }
