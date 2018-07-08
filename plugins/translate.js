@@ -5,7 +5,7 @@ const tprefix = "tl-";
 
 module.exports.run = async (bot, message) => {
     // 排除特定消息文本
-    if(message.startsWith(bot.configs.get("prefix"))) return;
+    if(message.content.startsWith(bot.configs.get("prefix"))) return;
     // 获取消息发送人的用户名或昵称
     let authorname = message.member.nickname ? message.member.nickname : message.author.username;
     // 缓存频道集合
