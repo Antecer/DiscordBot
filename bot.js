@@ -119,15 +119,19 @@ Promise.all([loadconfigs, loadcommands, loadplugins])
     });
     // 新成员加入服务器事件
     bot.on("guildMemberAdd", async member => {
-        const channel = member.guild.channels.find(c => c.name === "general");
-        if(channel)
-        {
-            channel.send(
-                `Welcome to the server, ${member}`
-                +`\nPlease set _nickname_ to **[country|language] osu!name**.`
-                +`\nInput _!help_ to get my command list.`
-            );
-        }
+        // 为新成员分配角色
+        let nomalrole = member.guild.roles.find(r=>r.name==='novice');
+        member.addRole(nomalrole.id);
+        // 欢迎新成员(已弃用))
+        // const channel = member.guild.channels.find(c => c.name === "general");
+        // if(channel)
+        // {
+        //     channel.send(
+        //         `Welcome to the server, ${member}`
+        //         +`\nPlease set _nickname_ to **[country|language] osu!name**.`
+        //         +`\nInput _!help_ to get my command list.`
+        //     );
+        // }
     });
     // 错误输出
     bot.on('error',error =>{
