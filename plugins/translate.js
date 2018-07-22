@@ -68,10 +68,11 @@ module.exports.run = async (bot, message) => {
                         .catch(error => {
                             info.setFooter(`Translate Failed:${error}`);
                             msg.edit(info);
+                            console.error(`[TranslateError]${error}`);
                         });
                     })
                     .catch(err => {
-                        info.setFooter(`Translate Failed:${error}`);
+                        info.setFooter(`Translate Failed:${err}`);
                         msg.edit(info);
                         console.error(`[TranslateError]${err.message}`);
                     });
