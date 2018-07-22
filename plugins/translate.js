@@ -66,9 +66,14 @@ module.exports.run = async (bot, message) => {
                             msg.edit(info);
                         })
                         .catch(error => {
-                            info.setFooter(`Translate Failed:${error}`);
+                            if(html.indexOf('DOCTYPE html') > 0){
+                                info.setFooter(`Translate Failed: The translation request frequency is too high and was rejected by Google.`);
+                            }
+                            else{
+                                info.setFooter(`Translate Failed:${error}`);
+                            }
                             msg.edit(info);
-                            console.error(`[TranslateError]${html}`);
+                            //console.error(`[TranslateError]${html}`);
                         });
                     })
                     .catch(err => {
