@@ -36,9 +36,9 @@ module.exports.run = async (bot, message) => {
                             path: encodeURI(`/translate_a/single?client=gtx&sl=auto&tl=${tlang}&ie=UTF-8&oe=UTF-8&dt=t&q=${message.content}`),
                             method: 'GET'
                         }
+                        let html = "";
                         new Promise(function (resolve, reject) {
                             let req = http.request(options, function(res) {
-                                let html = "";
                                 res.on('data', chunk => {
                                     html += chunk;
                                 });
@@ -54,9 +54,9 @@ module.exports.run = async (bot, message) => {
                             });
                             req.end();
                         })
-                        .then(html =>{
+                        .then(jsonStr =>{
                             let data = "";
-                            JSON.parse(html)[0].forEach(t => { data += t[0]; });
+                            JSON.parse(jsonStr)[0].forEach(t => { data += t[0]; });
                             data = data.replace(/！/g, "!");
                             info.setDescription(
                                 `*${message.content}*`+
@@ -68,7 +68,7 @@ module.exports.run = async (bot, message) => {
                         .catch(error => {
                             info.setFooter(`Translate Failed:${error}`);
                             msg.edit(info);
-                            console.error(`[TranslateError]${error}`);
+                            console.error(`[TranslateError]${html}`);
                         });
                     })
                     .catch(err => {
